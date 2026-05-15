@@ -1,0 +1,156 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and role management.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "reader"] },
+        "photoURL": { "type": "string" },
+        "displayName": { "type": "string" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Letter": {
+      "title": "Letter",
+      "description": "Daily love letters.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string", "description": "Markdown content of the letter." },
+        "publishDate": { "type": "string", "format": "date-time" },
+        "isPublished": { "type": "boolean" },
+        "isFavorite": { "type": "boolean" },
+        "isRead": { "type": "boolean", "description": "Whether the recipient has seen the letter." },
+        "authorId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "auroraColors": { 
+          "type": "array", 
+          "items": { "type": "string" },
+          "description": "Specific hex codes for the aurora background for this letter."
+        }
+      },
+      "required": ["title", "content", "publishDate", "isPublished", "authorId"]
+    },
+    "VaultItem": {
+      "title": "Vault Item",
+      "description": "Open When... situation-specific letters.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "condition": { "type": "string", "description": "The 'Open when...' trigger." },
+        "content": { "type": "string", "description": "Markdown content." },
+        "isOpened": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "icon": { "type": "string", "description": "Lucide icon name." }
+      },
+      "required": ["condition", "content", "createdAt"]
+    },
+    "CycleLog": {
+      "title": "Cycle Log",
+      "description": "Period and wellness tracking.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "startDate": { "type": "string", "format": "date-time" },
+        "duration": { "type": "number", "description": "Average cycle length in days." },
+        "symptoms": { "type": "array", "items": { "type": "string" } },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "startDate"]
+    },
+    "EmotionalWeather": {
+      "title": "Emotional Weather",
+      "description": "Daily emotional check-ins.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "socialBattery": { "type": "number", "minimum": 0, "maximum": 100 },
+        "emotion": { "type": "string" },
+        "note": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "date", "socialBattery", "emotion"]
+    },
+    "UsDrop": {
+      "title": "Us Drop",
+      "description": "Collaborative shared notes and links.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "type": { "type": "string", "enum": ["note", "link", "media"] },
+        "content": { "type": "string" },
+        "category": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "type", "content", "category"]
+    },
+    "CareQuest": {
+      "title": "Care Quest",
+      "description": "Requests for care or cravings from Razia.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "craving": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "fulfilled"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "craving", "status", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "Real-time notifications for letters and quests.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "body", "read", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users": {
+      "schema": "User",
+      "description": "User profiles and roles."
+    },
+    "letters": {
+      "schema": "Letter",
+      "description": "Main collection for daily letters."
+    },
+    "vault": {
+      "schema": "VaultItem",
+      "description": "Collection for Open When letters."
+    },
+    "cycle_logs": {
+      "schema": "CycleLog",
+      "description": "Logs for period tracking."
+    },
+    "weather": {
+      "schema": "EmotionalWeather",
+      "description": "Daily emotional weather logs."
+    },
+    "us_drops": {
+      "schema": "UsDrop",
+      "description": "Shared board for links and notes."
+    },
+    "care_quests": {
+      "schema": "CareQuest",
+      "description": "Requests from Razia for specific care."
+    },
+    "notifications": {
+      "schema": "Notification",
+      "description": "Real-time notification logs."
+    }
+  }
+}

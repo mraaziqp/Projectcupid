@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" fill="#0f172a"/>
+  <path d="M50 80C50 80 20 60 20 35C20 20 35 15 45 25L50 30L55 25C65 15 80 20 80 35C80 60 50 80 50 80Z" fill="#ec4899">
+    <animate attributeName="opacity" values="0.8;1;0.8" dur="3s" repeatCount="indefinite" />
+  </path>
+</svg>

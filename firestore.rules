@@ -1,0 +1,134 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && getUserData().role == 'admin';
+    }
+
+    function isReader() {
+      return isSignedIn() && getUserData().role == 'reader';
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Validation helpers
+    function isValidLetter(data) {
+      return data.title is string && data.title.size() <= 200 &&
+             data.content is string && data.content.size() <= 10000 &&
+             data.authorId == request.auth.uid;
+    }
+
+    function isValidCycle(data) {
+      return data.userId == request.auth.uid &&
+             data.startDate is timestamp &&
+             data.duration is number;
+    }
+
+    function isValidWeather(data) {
+      return data.userId == request.auth.uid &&
+             data.date is string &&
+             data.socialBattery is number &&
+             data.socialBattery >= 0 && data.socialBattery <= 100 &&
+             data.emotion is string;
+    }
+
+    function isValidDrop(data) {
+      return data.userId == request.auth.uid &&
+             data.type in ['note', 'link', 'media'] &&
+             data.content is string &&
+             data.category is string;
+    }
+
+    function isValidQuest(data) {
+      return data.userId == request.auth.uid &&
+             data.craving is string &&
+             data.status in ['pending', 'fulfilled'];
+    }
+
+    function isValidNotification(data) {
+      return data.userId is string &&
+             data.title is string &&
+             data.body is string &&
+             data.read is bool;
+    }
+
+    // Users
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isOwner(userId) && (
+        request.resource.data.role == 'reader' || 
+        (request.resource.data.role == 'admin' && request.auth.token.email == 'backupe9@gmail.com')
+      );
+      allow update: if isAdmin() || (isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'photoURL']));
+    }
+
+    // Letters
+    match /letters/{letterId} {
+      allow read: if isAdmin() || (isReader() && resource.data.isPublished == true && resource.data.publishDate <= request.time);
+      allow create: if isAdmin() && isValidLetter(request.resource.data);
+      allow update: if (isAdmin() && isValidLetter(request.resource.data)) || 
+                       (isReader() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isFavorite', 'isRead']));
+      allow delete: if isAdmin();
+    }
+
+    // Vault
+    match /vault/{itemId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Cycle Logs
+    match /cycle_logs/{logId} {
+      allow read: if isSignedIn();
+      allow create, update: if isReader() && isValidCycle(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    // Emotional Weather
+    match /weather/{weatherId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() && isValidWeather(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    // Us Drops
+    match /us_drops/{dropId} {
+      allow read: if isSignedIn();
+      allow create: if isAdmin() && isValidDrop(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    // Care Quests
+    match /care_quests/{questId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidQuest(request.resource.data);
+      allow update: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+
+    // Notifications
+    match /notifications/{notifId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+  }
+}

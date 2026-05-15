@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Georgia", serif;
+}
+
+@layer base {
+  body {
+    @apply bg-[#020205] text-white antialiased selection:bg-pink-500/30;
+  }
+}
+
+.markdown-body {
+  @apply space-y-6 leading-relaxed text-white/80;
+  font-family: var(--font-serif);
+}
+
+.markdown-body h1, .markdown-body h2, .markdown-body h3 {
+  @apply text-white font-light italic mb-4 tracking-tight;
+}
+
+.markdown-body p {
+  @apply text-xl;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-white/10 rounded-full hover:bg-white/20;
+}
+

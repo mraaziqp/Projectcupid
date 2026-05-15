@@ -1,0 +1,6 @@
+{
+  "name": "Project Cupid",
+  "description": "A private sanctuary for our most beautiful connection, featuring daily aurora letters and a physical hardware tie-in.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
