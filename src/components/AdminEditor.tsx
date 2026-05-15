@@ -70,7 +70,7 @@ export default function AdminEditor({ userId }: { userId: string }) {
     setAiOptimizing(true);
     try {
       if (!aiLocal) {
-        alert("Cloud AI not connected. Please toggle Local AI (Ollama) to refine scripts.");
+        alert("AI assistant is off. Toggle Ollama AI ON to refine scripts.");
         return;
       }
       const prompt = `You are an AI assistant helping a poet and engineer write a personal letter to his fiancée, Razia. 
@@ -81,7 +81,7 @@ export default function AdminEditor({ userId }: { userId: string }) {
       const refined = await generateOllamaDraft(prompt);
       setContent(refined);
     } catch (e) {
-      alert("AI Refinement failed. Is Ollama running locally at port 11434?");
+      alert(`AI Refinement failed: ${e instanceof Error ? e.message : "Unknown error"}`);
     } finally {
       setAiOptimizing(false);
     }
@@ -92,7 +92,7 @@ export default function AdminEditor({ userId }: { userId: string }) {
     setAiProofreading(true);
     try {
       if (!aiLocal) {
-        alert("Cloud AI not connected. Please toggle Local AI (Ollama) for proofreading.");
+        alert("AI assistant is off. Toggle Ollama AI ON for proofreading.");
         return;
       }
       const prompt = `You are an expert copyeditor. Fix all spelling and grammatical errors in the following text. Do NOT change the meaning, tone, or emotional resonance of the letter. Output ONLY the corrected text.
@@ -102,7 +102,7 @@ export default function AdminEditor({ userId }: { userId: string }) {
       const corrected = await generateOllamaDraft(prompt);
       setContent(corrected);
     } catch (e) {
-      alert("Proofreading failed. Is Ollama running locally at port 11434?");
+      alert(`Proofreading failed: ${e instanceof Error ? e.message : "Unknown error"}`);
     } finally {
       setAiProofreading(false);
     }
@@ -125,7 +125,7 @@ export default function AdminEditor({ userId }: { userId: string }) {
              )}
            >
              <BrainCircuit size={14} />
-             Local AI {aiLocal ? "ON" : "OFF"}
+             Ollama AI {aiLocal ? "ON" : "OFF"}
            </button>
         </div>
       </div>

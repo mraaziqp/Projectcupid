@@ -44,6 +44,9 @@ Vercel should auto-detect the settings from `vercel.json`. If you set them manua
 Add these in Vercel Project Settings -> Environment Variables:
 
 - `GEMINI_API_KEY` (required)
+- `OLLAMA_API_URL` (required for Admin Editor refine/proofread)
+- `OLLAMA_API_KEY` (required for Admin Editor refine/proofread)
+- `OLLAMA_MODEL` (optional; defaults to `llama3`)
 - `BRIDGE_SECRET` (optional; defaults to `cupid-forever-bridge-2024` if omitted)
 
 ### 4) Redeploy

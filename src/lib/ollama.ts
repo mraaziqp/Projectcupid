@@ -5,25 +5,29 @@ export interface OllamaResponse {
   done: boolean;
 }
 
-export async function generateOllamaDraft(prompt: string, localUrl: string = "http://localhost:11434/api/generate"): Promise<string> {
+export async function generateOllamaDraft(prompt: string): Promise<string> {
   try {
-    const response = await fetch(localUrl, {
+    const response = await fetch("/api/ollama/generate", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "llama3", // Default model
         prompt: prompt,
-        stream: false,
       }),
     });
 
     if (!response.ok) {
-      throw new Error("Ollama connection failed. Make sure your local server is running on port 11434.");
+      const errorBody = await response.json().catch(() => null);
+      const msg = errorBody?.error || "Ollama request failed.";
+      throw new Error(msg);
     }
 
-    const data: OllamaResponse = await response.json();
+    const data = await response.json();
+    if (!data?.response || typeof data.response !== "string") {
+      throw new Error("Invalid response from Ollama API.");
+    }
+
     return data.response;
   } catch (error) {
     console.error("Ollama Error:", error);
