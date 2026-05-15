@@ -11,7 +11,18 @@ export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
-export const signIn = () => signInWithPopup(auth, googleProvider);
+export async function signIn() {
+  try {
+    return await signInWithPopup(auth, googleProvider);
+  } catch (error: any) {
+    if (error?.code === 'auth/unauthorized-domain') {
+      throw new Error(
+        'This domain is not authorized in Firebase Auth. Add it in Firebase Console -> Authentication -> Settings -> Authorized domains.'
+      );
+    }
+    throw error;
+  }
+}
 export const signOut = () => auth.signOut();
 
 // Cloud Messaging

@@ -6,13 +6,16 @@ import { motion } from "motion/react";
 
 export default function AuthScreen() {
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleLogin = async () => {
     setLoading(true);
+    setErrorMessage(null);
     try {
       await signIn();
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
+      setErrorMessage(error?.message || "Sign in failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -45,6 +48,12 @@ export default function AuthScreen() {
           <LogIn className="w-5 h-5" />
           {loading ? "Connecting..." : "Sign in to Enter"}
         </button>
+
+        {errorMessage && (
+          <p className="text-sm text-rose-300 bg-rose-950/40 border border-rose-500/30 rounded-lg p-3">
+            {errorMessage}
+          </p>
+        )}
 
         <p className="text-xs text-neutral-500 uppercase tracking-widest pt-4">
           Strictly Private • Forever Secure
