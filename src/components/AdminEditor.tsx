@@ -9,7 +9,7 @@ import { format } from "date-fns";
 import { cn } from "../lib/utils";
 import { generateOllamaDraft } from "../lib/ollama";
 
-export default function AdminEditor({ userId }: { userId: string }) {
+export default function AdminEditor({ userId, onPublished }: { userId: string; onPublished?: () => void }) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [publishDate, setPublishDate] = useState(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
@@ -58,6 +58,7 @@ export default function AdminEditor({ userId }: { userId: string }) {
       setTitle("");
       setContent("");
       alert("Letter successfully transmitted to aurora.");
+      onPublished?.();
     } catch (e) {
       handleFirestoreError(e, OperationType.WRITE, "letters");
     } finally {
@@ -145,6 +146,12 @@ export default function AdminEditor({ userId }: { userId: string }) {
                   onChange={(e) => setPublishDate(e.target.value)}
                   className="bg-transparent text-[10px] text-white/40 border border-white/10 rounded-lg px-3 py-1.5 focus:outline-none focus:border-pink-500/50"
                 />
+                <button
+                  onClick={() => setPublishDate(format(new Date(), "yyyy-MM-dd'T'HH:mm"))}
+                  className="px-3 py-1.5 rounded-lg bg-white/5 text-white/60 border border-white/10 text-[10px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all"
+                >
+                  Publish Now
+                </button>
                 <button 
                   onClick={handleAIRefine}
                   disabled={aiOptimizing || aiProofreading}
