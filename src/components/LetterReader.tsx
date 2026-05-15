@@ -22,6 +22,7 @@ const BRIDGE_SECRET = "cupid-forever-bridge-2024";
 export default function LetterReader({ letter, onClose }: { letter: Letter; onClose: () => void }) {
   const [isFavorite, setIsFavorite] = useState(letter.isFavorite);
   const date = letter.publishDate?.toDate ? letter.publishDate.toDate() : new Date();
+  const isPersistedLetter = letter.id !== "preview" && !letter.id.startsWith("vault-");
 
   useEffect(() => {
     // Audio logic
@@ -52,6 +53,7 @@ export default function LetterReader({ letter, onClose }: { letter: Letter; onCl
 
     // Mark as read when opened
     const markAsRead = async () => {
+      if (!isPersistedLetter) return;
       try {
         await updateDoc(doc(db, "letters", letter.id), { isRead: true });
       } catch (e) {
@@ -80,15 +82,17 @@ export default function LetterReader({ letter, onClose }: { letter: Letter; onCl
         }
       }, 50);
     };
-  }, [letter.id]);
+  }, [letter.id, isPersistedLetter]);
 
   const toggleFavorite = async () => {
     try {
       const newFav = !isFavorite;
       setIsFavorite(newFav);
-      await updateDoc(doc(db, "letters", letter.id), { isFavorite: newFav });
+      if (isPersistedLetter) {
+        await updateDoc(doc(db, "letters", letter.id), { isFavorite: newFav });
+      }
 
-      if (newFav) {
+      if (newFav && isPersistedLetter) {
         // Push to Forever Book Bridge
         await fetch("/api/bridge/favorite", {
           method: "POST",

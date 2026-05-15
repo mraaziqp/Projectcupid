@@ -27,6 +27,8 @@ export default function EmotionalWeather({ userId, userEmail }: { userId: string
   const [myWeather, setMyWeather] = useState<WeatherData | null>(null);
   const [partnerWeather, setPartnerWeather] = useState<WeatherData | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [draftBattery, setDraftBattery] = useState(50);
+  const [draftEmotion, setDraftEmotion] = useState("Calm");
   const today = format(new Date(), 'yyyy-MM-dd');
 
   useEffect(() => {
@@ -37,18 +39,28 @@ export default function EmotionalWeather({ userId, userEmail }: { userId: string
     );
 
     return onSnapshot(q, (snapshot) => {
+      let nextMyWeather: WeatherData | null = null;
+      let nextPartnerWeather: WeatherData | null = null;
       snapshot.docs.forEach(doc => {
         const data = doc.data() as WeatherData;
         if (data.userId === userId) {
-          setMyWeather(data);
+          nextMyWeather = data;
         } else {
-          setPartnerWeather(data);
+          nextPartnerWeather = data;
         }
       });
+      setMyWeather(nextMyWeather);
+      setPartnerWeather(nextPartnerWeather);
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, "weather");
     });
   }, [userId, today]);
+
+  useEffect(() => {
+    if (!myWeather) return;
+    setDraftBattery(myWeather.socialBattery ?? 50);
+    setDraftEmotion(myWeather.emotion || "Calm");
+  }, [myWeather]);
 
   const handleSubmit = async (socialBattery: number, emotion: string) => {
     setSubmitting(true);
@@ -89,13 +101,13 @@ export default function EmotionalWeather({ userId, userEmail }: { userId: string
              <div className="space-y-4">
                <div className="flex justify-between items-center">
                  <label className="text-sm font-medium text-white/60">Social Battery</label>
-                 <span className="text-lg font-serif italic text-white">{myWeather?.socialBattery || 50}%</span>
+                 <span className="text-lg font-serif italic text-white">{draftBattery}%</span>
                </div>
                <input 
                  type="range" 
                  min="0" max="100" 
-                 value={myWeather?.socialBattery || 50}
-                 onChange={(e) => handleSubmit(parseInt(e.target.value), myWeather?.emotion || "Calm")}
+                 value={draftBattery}
+                 onChange={(e) => setDraftBattery(parseInt(e.target.value))}
                  className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
                />
                <div className="flex justify-between text-[10px] uppercase tracking-widest text-white/20 font-bold">
@@ -110,10 +122,10 @@ export default function EmotionalWeather({ userId, userEmail }: { userId: string
                  {EMOTIONS.map((e) => (
                    <button
                      key={e.label}
-                     onClick={() => handleSubmit(myWeather?.socialBattery || 50, e.label)}
+                     onClick={() => setDraftEmotion(e.label)}
                      className={cn(
                        "flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-semibold transition-all",
-                       myWeather?.emotion === e.label 
+                       draftEmotion === e.label 
                         ? `${e.bg} ${e.border} ${e.color} shadow-lg scale-105`
                         : "bg-white/5 border-transparent text-white/40 hover:bg-white/10"
                      )}
@@ -123,6 +135,14 @@ export default function EmotionalWeather({ userId, userEmail }: { userId: string
                    </button>
                  ))}
                </div>
+
+               <button
+                 onClick={() => handleSubmit(draftBattery, draftEmotion)}
+                 disabled={submitting}
+                 className="px-4 py-2.5 rounded-xl bg-blue-500 text-white text-xs font-bold uppercase tracking-widest hover:bg-blue-600 transition-colors disabled:opacity-60"
+               >
+                 {submitting ? "Saving..." : "Save Check-in"}
+               </button>
              </div>
            </div>
         </GlassPanel>

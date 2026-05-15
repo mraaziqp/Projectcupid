@@ -45,7 +45,7 @@ const PHASES: Record<Phase, { range: [number, number]; color: string; advice: st
   Luteal: {
     range: [17, 28],
     color: "from-purple-500 to-indigo-600",
-    advice: "You might feel like nested vibes today. Focus on cozy comforts and light tasks. Magnesium-rich foods can help withPMS symptoms.",
+    advice: "You might feel like nested vibes today. Focus on cozy comforts and light tasks. Magnesium-rich foods can help with PMS symptoms.",
     partner: "Razia is likely in her Luteal phase. She might be feeling a bit more sensitive or easily overwhelmed. Tonight is a great night to cook dinner and put on a movie."
   }
 };

@@ -119,6 +119,18 @@ export default function UsDrop({ userId }: { userId: string }) {
         </form>
       </GlassPanel>
 
+      {loading && (
+        <GlassPanel className="p-6 text-center text-white/40">
+          Loading shared drops...
+        </GlassPanel>
+      )}
+
+      {!loading && drops.length === 0 && (
+        <GlassPanel className="p-6 text-center text-white/40">
+          No drops yet. Start with a date idea, memory, or a sweet note.
+        </GlassPanel>
+      )}
+
       <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
         <AnimatePresence mode="popLayout">
           {drops.map((drop, i) => (
