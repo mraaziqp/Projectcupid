@@ -3,16 +3,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { lazy, Suspense } from "react";
 import { useAuth } from "./hooks/useAuth";
 import Background from "./components/Background";
-import AuthScreen from "./components/AuthScreen";
-import Dashboard from "./components/Dashboard";
-import AdminDashboard from "./components/AdminDashboard";
-import PasswordGate from "./components/PasswordGate";
-import InstallPrompt from "./components/InstallPrompt";
-import NotificationManager from "./components/NotificationManager";
 import { LogOut, Heart } from "lucide-react";
 import { auth } from "./lib/firebase";
+
+const AuthScreen = lazy(() => import("./components/AuthScreen"));
+const Dashboard = lazy(() => import("./components/Dashboard"));
+const AdminDashboard = lazy(() => import("./components/AdminDashboard"));
+const PasswordGate = lazy(() => import("./components/PasswordGate"));
+const InstallPrompt = lazy(() => import("./components/InstallPrompt"));
+const NotificationManager = lazy(() => import("./components/NotificationManager"));
 
 export default function App() {
   const { user, profile, loading } = useAuth();
@@ -27,15 +29,16 @@ export default function App() {
   }
 
   return (
-    <PasswordGate>
-      <div className="min-h-screen relative">
-        <Background />
-        <InstallPrompt />
-        <NotificationManager profile={profile} />
+    <Suspense fallback={<div className="h-screen flex items-center justify-center bg-neutral-950 text-white/60">Loading...</div>}>
+      <PasswordGate>
+        <div className="min-h-screen relative">
+          <Background />
+          <InstallPrompt />
+          <NotificationManager profile={profile} />
         
-        {!user ? (
-          <AuthScreen />
-        ) : (
+          {!user ? (
+            <AuthScreen />
+          ) : (
           <>
             {/* Universal Nav */}
             <nav className="fixed top-6 left-6 right-6 z-40">
@@ -87,9 +90,10 @@ export default function App() {
               </div>
             </footer>
           </>
-        )}
-      </div>
-    </PasswordGate>
+          )}
+        </div>
+      </PasswordGate>
+    </Suspense>
   );
 }
 

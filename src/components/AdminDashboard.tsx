@@ -1,18 +1,19 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, Timestamp } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 import { List, Plus, Activity, Eye, Edit3, Save, Trash2, X, Clock4, CheckCircle2 } from "lucide-react";
 import GlassPanel from "./GlassPanel";
-import LunarCycle from "./LunarCycle";
-import EmotionalWeather from "./EmotionalWeather";
-import UsDrop from "./UsDrop";
 import { format } from "date-fns";
 import { User } from "firebase/auth";
 import { UserProfile } from "../hooks/useAuth";
-import AdminEditor from "./AdminEditor";
-import LetterReader from "./LetterReader";
 import { AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
+
+const LunarCycle = lazy(() => import("./LunarCycle"));
+const EmotionalWeather = lazy(() => import("./EmotionalWeather"));
+const UsDrop = lazy(() => import("./UsDrop"));
+const AdminEditor = lazy(() => import("./AdminEditor"));
+const LetterReader = lazy(() => import("./LetterReader"));
 
 interface LetterRecord {
   id: string;
@@ -149,7 +150,9 @@ export default function AdminDashboard({ user }: { user: User; profile: UserProf
       </div>
 
       {view === "write" ? (
-        <AdminEditor userId={user.uid} onPublished={() => setView("list")} />
+        <Suspense fallback={<div className="py-20 text-center text-white/30">Loading editor...</div>}>
+          <AdminEditor userId={user.uid} onPublished={() => setView("list")} />
+        </Suspense>
       ) : view === "list" ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {history.map((item) => {
@@ -210,16 +213,20 @@ export default function AdminDashboard({ user }: { user: User; profile: UserProf
           })}
         </div>
       ) : (
-        <div className="space-y-12">
-          <LunarCycle userId={user.uid} isAdmin={true} />
-          <EmotionalWeather userId={user.uid} userEmail={user.email || ""} />
-          <UsDrop userId={user.uid} />
-        </div>
+        <Suspense fallback={<div className="py-20 text-center text-white/30">Loading radar...</div>}>
+          <div className="space-y-12">
+            <LunarCycle userId={user.uid} isAdmin={true} />
+            <EmotionalWeather userId={user.uid} userEmail={user.email || ""} />
+            <UsDrop userId={user.uid} />
+          </div>
+        </Suspense>
       )}
 
       <AnimatePresence>
         {selectedLetter && (
-          <LetterReader letter={selectedLetter} onClose={() => setSelectedLetter(null)} />
+          <Suspense fallback={null}>
+            <LetterReader letter={selectedLetter} onClose={() => setSelectedLetter(null)} />
+          </Suspense>
         )}
       </AnimatePresence>
 

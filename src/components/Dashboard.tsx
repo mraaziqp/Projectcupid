@@ -1,18 +1,19 @@
-import { useState, useEffect } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import { collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 import LetterCard from "./LetterCard";
-import LetterReader from "./LetterReader";
-import Vault from "./Vault";
-import LunarCycle from "./LunarCycle";
-import EmotionalWeather from "./EmotionalWeather";
-import UsDrop from "./UsDrop";
 import { AnimatePresence, motion } from "motion/react";
-import { BookHeart, Package, Heart, Sparkles, Moon, Cloud, Share2 } from "lucide-react";
+import { BookHeart, Package, Heart, Share2 } from "lucide-react";
 import GlassPanel from "./GlassPanel";
 import { cn } from "../lib/utils";
 import { User } from "firebase/auth";
 import { UserProfile } from "../hooks/useAuth";
+
+const LetterReader = lazy(() => import("./LetterReader"));
+const Vault = lazy(() => import("./Vault"));
+const LunarCycle = lazy(() => import("./LunarCycle"));
+const EmotionalWeather = lazy(() => import("./EmotionalWeather"));
+const UsDrop = lazy(() => import("./UsDrop"));
 
 interface Letter {
   id: string;
@@ -120,7 +121,9 @@ export default function Dashboard({ user, profile }: { user: User; profile: User
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
               >
-                <Vault onOpenLetter={setSelectedLetter} />
+                <Suspense fallback={<div className="py-20 text-center text-white/30">Loading vault...</div>}>
+                  <Vault onOpenLetter={setSelectedLetter} />
+                </Suspense>
               </motion.div>
             ) : (
               <motion.div
@@ -130,9 +133,11 @@ export default function Dashboard({ user, profile }: { user: User; profile: User
                 exit={{ opacity: 0, x: 20 }}
                 className="space-y-12"
               >
-                <LunarCycle userId={user.uid} isAdmin={false} />
-                <EmotionalWeather userId={user.uid} userEmail={user.email || ""} />
-                <UsDrop userId={user.uid} />
+                <Suspense fallback={<div className="py-20 text-center text-white/30">Loading connection features...</div>}>
+                  <LunarCycle userId={user.uid} isAdmin={false} />
+                  <EmotionalWeather userId={user.uid} userEmail={user.email || ""} />
+                  <UsDrop userId={user.uid} />
+                </Suspense>
               </motion.div>
             )}
           </AnimatePresence>
@@ -239,10 +244,12 @@ export default function Dashboard({ user, profile }: { user: User; profile: User
       {/* Letter Reader Modal */}
       <AnimatePresence>
         {selectedLetter && (
-          <LetterReader 
-            letter={selectedLetter} 
-            onClose={() => setSelectedLetter(null)} 
-          />
+          <Suspense fallback={null}>
+            <LetterReader 
+              letter={selectedLetter} 
+              onClose={() => setSelectedLetter(null)} 
+            />
+          </Suspense>
         )}
       </AnimatePresence>
     </div>

@@ -43,5 +43,23 @@ export default defineConfig(({ mode }) => {
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
     },
+    build: {
+      chunkSizeWarningLimit: 550,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return;
+
+            if (id.includes('node_modules/firebase') || id.includes('node_modules/@firebase')) return 'firebase';
+            if (id.includes('node_modules/motion')) return 'motion';
+            if (id.includes('node_modules/lucide-react')) return 'icons';
+            if (id.includes('node_modules/react-markdown')) return 'markdown';
+            if (id.includes('node_modules/date-fns')) return 'date-utils';
+
+            return 'vendor';
+          }
+        }
+      }
+    },
   };
 });
