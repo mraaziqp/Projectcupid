@@ -1,13 +1,14 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, Timestamp } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
-import { List, Plus, Heart, Eye, Edit3, Save, Trash2, X, Clock4, CheckCircle2 } from "lucide-react";
+import { List, Plus, Heart, Eye, Edit3, Save, Trash2, X, Clock4, CheckCircle2, Activity } from "lucide-react";
 import GlassPanel from "./GlassPanel";
 import { format } from "date-fns";
 import { User } from "firebase/auth";
 import { UserProfile } from "../hooks/useAuth";
 import { AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
+import { notifyPartner } from "../lib/notifications";
 
 const LunarCycle = lazy(() => import("./LunarCycle"));
 const EmotionalWeather = lazy(() => import("./EmotionalWeather"));
@@ -81,6 +82,18 @@ export default function AdminDashboard({ user, profile }: { user: User; profile:
         isPublished: true,
         authorId: editingLetter.authorId || user.uid,
       });
+
+      // Keep notification failures non-blocking so successful edits still complete.
+      try {
+        await notifyPartner(
+          user.uid,
+          "A letter was updated.",
+          `A revised letter is waiting: ${editTitle.trim()}`
+        );
+      } catch (notifyError) {
+        console.error("Failed to notify partner after edit:", notifyError);
+      }
+
       setEditingLetter(null);
       alert("Letter updated successfully.");
     } catch (e) {

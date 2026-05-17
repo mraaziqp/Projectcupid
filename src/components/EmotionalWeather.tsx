@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Zap, Battery, BatteryMedium, BatteryLow, BatteryWarning, Heart, Sparkles, Wind, Droplets, Star, Coffee, Moon, Flame, Ghost, Cloudy, Smile, Music } from "lucide-react";
+import { Zap, Battery, BatteryMedium, BatteryLow, BatteryWarning, Heart, Sparkles, Wind, Droplets, Star, Coffee, Moon, Flame, Ghost, Cloudy, Smile, Music, User, UserPlus } from "lucide-react";
 import GlassPanel from "./GlassPanel";
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 import { collection, query, where, onSnapshot, setDoc, doc, Timestamp } from "firebase/firestore";
