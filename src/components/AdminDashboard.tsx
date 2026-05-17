@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, Timestamp } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
-import { List, Plus, Heart, Eye, Edit3, Save, Trash2, X, Clock4, CheckCircle2 } from "lucide-react";
+import { List, Plus, Heart, Eye, Edit3, Save, Trash2, X, Clock4, CheckCircle2, Inbox, Send, Archive } from "lucide-react";
 import GlassPanel from "./GlassPanel";
 import { format } from "date-fns";
 import { User } from "firebase/auth";
@@ -15,6 +15,7 @@ const EmotionalWeather = lazy(() => import("./EmotionalWeather"));
 const UsDrop = lazy(() => import("./UsDrop"));
 const AdminEditor = lazy(() => import("./AdminEditor"));
 const LetterReader = lazy(() => import("./LetterReader"));
+const Vault = lazy(() => import("./Vault"));
 
 interface LetterRecord {
   id: string;
@@ -25,11 +26,14 @@ interface LetterRecord {
   isFavorite: boolean;
   isRead?: boolean;
   authorId?: string;
+  authorRole?: string;
+  recipientRole?: string;
 }
 
 export default function AdminDashboard({ user, profile }: { user: User; profile: UserProfile | null }) {
   const [history, setHistory] = useState<LetterRecord[]>([]);
-  const [view, setView] = useState<"write" | "list" | "radar">("write");
+  const [view, setView] = useState<"write" | "list" | "vault" | "radar">("list");
+  const [listFilter, setListFilter] = useState<"received" | "sent" | "all">("received");
   const [selectedLetter, setSelectedLetter] = useState<LetterRecord | null>(null);
   const [editingLetter, setEditingLetter] = useState<LetterRecord | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -124,6 +128,16 @@ export default function AdminDashboard({ user, profile }: { user: User; profile:
     return item.isPublished && publishDate.getTime() <= Date.now();
   };
 
+  const receivedLetters = history.filter((item) => item.authorId && item.authorId !== user.uid);
+  const sentLetters = history.filter((item) => !item.authorId || item.authorId === user.uid);
+
+  const filteredHistory =
+    listFilter === "received" ? receivedLetters :
+    listFilter === "sent" ? sentLetters :
+    history;
+
+  const unreadFromHerCount = receivedLetters.filter((item) => !item.isRead).length;
+
   return (
     <div className="max-w-5xl mx-auto px-6 pb-32 space-y-8">
       <div className="flex justify-between items-end">
@@ -141,15 +155,24 @@ export default function AdminDashboard({ user, profile }: { user: User; profile:
           >
             <Plus className="w-4 h-4" /> Write
           </button>
-            <button
-              onClick={() => setView("list")}
-              className={cn(
-                "px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-all",
-                view === "list" ? "bg-white text-black shadow-xl" : "text-white/40 hover:text-white"
-              )}
-            >
-              <List className="w-4 h-4" /> Letters
-            </button>
+          <button
+            onClick={() => setView("list")}
+            className={cn(
+              "px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-all",
+              view === "list" ? "bg-white text-black shadow-xl" : "text-white/40 hover:text-white"
+            )}
+          >
+            <List className="w-4 h-4" /> Letters
+          </button>
+          <button
+            onClick={() => setView("vault")}
+            className={cn(
+              "px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-all",
+              view === "vault" ? "bg-white text-black shadow-xl" : "text-white/40 hover:text-white"
+            )}
+          >
+            <Archive className="w-4 h-4" /> Vault
+          </button>
           <button
             onClick={() => setView("radar")}
             className={cn(
@@ -167,64 +190,134 @@ export default function AdminDashboard({ user, profile }: { user: User; profile:
           <AdminEditor userId={user.uid} onPublished={() => setView("list")} />
         </Suspense>
       ) : view === "list" ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {history.map((item) => {
-            const visibleNow = isVisibleToReaderNow(item);
-            return (
-              <GlassPanel key={item.id} className="p-6 space-y-4 hover:border-white/20 transition-all">
-                <div className="space-y-1">
-                  <h3 className="text-xl font-light italic font-serif text-white">{item.title}</h3>
-                  <p className="text-[10px] uppercase tracking-widest text-white/30 font-bold">
-                    {item.publishDate?.toDate ? format(item.publishDate.toDate(), "PPpp") : "No publish date"}
-                  </p>
-                </div>
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <GlassPanel className="p-5">
+              <p className="text-[10px] uppercase tracking-widest text-white/40 font-bold mb-2">From Razia</p>
+              <div className="text-3xl font-light italic font-serif text-white">{receivedLetters.length}</div>
+            </GlassPanel>
+            <GlassPanel className="p-5">
+              <p className="text-[10px] uppercase tracking-widest text-white/40 font-bold mb-2">Unopened From Her</p>
+              <div className="text-3xl font-light italic font-serif text-pink-400">{unreadFromHerCount}</div>
+            </GlassPanel>
+            <GlassPanel className="p-5">
+              <p className="text-[10px] uppercase tracking-widest text-white/40 font-bold mb-2">Sent By You</p>
+              <div className="text-3xl font-light italic font-serif text-white">{sentLetters.length}</div>
+            </GlassPanel>
+          </div>
 
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <span
-                    className={cn(
-                      "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border",
-                      visibleNow
-                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                        : "bg-amber-500/10 text-amber-300 border-amber-500/20"
+          <GlassPanel className="p-4 flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setListFilter("received")}
+              className={cn(
+                "px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-widest flex items-center gap-2 border",
+                listFilter === "received"
+                  ? "bg-pink-500/15 border-pink-500/40 text-pink-300"
+                  : "bg-white/5 border-white/10 text-white/50 hover:text-white"
+              )}
+            >
+              <Inbox className="w-3.5 h-3.5" /> Inbox From Her
+            </button>
+            <button
+              onClick={() => setListFilter("sent")}
+              className={cn(
+                "px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-widest flex items-center gap-2 border",
+                listFilter === "sent"
+                  ? "bg-blue-500/15 border-blue-500/40 text-blue-300"
+                  : "bg-white/5 border-white/10 text-white/50 hover:text-white"
+              )}
+            >
+              <Send className="w-3.5 h-3.5" /> Sent By You
+            </button>
+            <button
+              onClick={() => setListFilter("all")}
+              className={cn(
+                "px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-widest flex items-center gap-2 border",
+                listFilter === "all"
+                  ? "bg-white/15 border-white/40 text-white"
+                  : "bg-white/5 border-white/10 text-white/50 hover:text-white"
+              )}
+            >
+              <List className="w-3.5 h-3.5" /> All Letters
+            </button>
+          </GlassPanel>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {filteredHistory.map((item) => {
+              const fromRazia = item.authorId && item.authorId !== user.uid;
+              const visibleNow = isVisibleToReaderNow(item);
+              return (
+                <GlassPanel key={item.id} className="p-6 space-y-4 hover:border-white/20 transition-all">
+                  <div className="space-y-1">
+                    <h3 className="text-xl font-light italic font-serif text-white">{item.title}</h3>
+                    <p className="text-[10px] uppercase tracking-widest text-white/30 font-bold">
+                      {item.publishDate?.toDate ? format(item.publishDate.toDate(), "PPpp") : "No publish date"}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <span
+                      className={cn(
+                        "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border",
+                        fromRazia
+                          ? "bg-pink-500/10 text-pink-300 border-pink-500/20"
+                          : visibleNow
+                          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                          : "bg-amber-500/10 text-amber-300 border-amber-500/20"
+                      )}
+                    >
+                      {fromRazia ? "From Razia" : visibleNow ? "Visible To Her" : "Scheduled / Hidden"}
+                    </span>
+                    {item.isRead ? (
+                      <span className="text-[10px] uppercase tracking-widest text-blue-300 flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Opened
+                      </span>
+                    ) : (
+                      <span className="text-[10px] uppercase tracking-widest text-white/40 flex items-center gap-1">
+                        <Clock4 className="w-3.5 h-3.5" /> Unopened
+                      </span>
                     )}
-                  >
-                    {visibleNow ? "Visible To Her" : "Scheduled / Hidden"}
-                  </span>
-                  {item.isRead ? (
-                    <span className="text-[10px] uppercase tracking-widest text-blue-300 flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Read
-                    </span>
-                  ) : (
-                    <span className="text-[10px] uppercase tracking-widest text-white/40 flex items-center gap-1">
-                      <Clock4 className="w-3.5 h-3.5" /> Unread
-                    </span>
-                  )}
-                </div>
+                  </div>
 
-                <div className="flex items-center gap-2 pt-2">
-                  <button
-                    onClick={() => setSelectedLetter(item)}
-                    className="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15 text-white text-[11px] font-bold uppercase tracking-widest flex items-center gap-2"
-                  >
-                    <Eye className="w-4 h-4" /> Open
-                  </button>
-                  <button
-                    onClick={() => openEditModal(item)}
-                    className="px-3 py-2 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-300 text-[11px] font-bold uppercase tracking-widest flex items-center gap-2"
-                  >
-                    <Edit3 className="w-4 h-4" /> Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(item)}
-                    className="px-3 py-2 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-[11px] font-bold uppercase tracking-widest flex items-center gap-2"
-                  >
-                    <Trash2 className="w-4 h-4" /> Delete
-                  </button>
-                </div>
-              </GlassPanel>
-            );
-          })}
+                  <div className="flex items-center gap-2 pt-2">
+                    <button
+                      onClick={() => setSelectedLetter(item)}
+                      className="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15 text-white text-[11px] font-bold uppercase tracking-widest flex items-center gap-2"
+                    >
+                      <Eye className="w-4 h-4" /> Open
+                    </button>
+                    {!fromRazia && (
+                      <button
+                        onClick={() => openEditModal(item)}
+                        className="px-3 py-2 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-300 text-[11px] font-bold uppercase tracking-widest flex items-center gap-2"
+                      >
+                        <Edit3 className="w-4 h-4" /> Edit
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDelete(item)}
+                      className="px-3 py-2 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-[11px] font-bold uppercase tracking-widest flex items-center gap-2"
+                    >
+                      <Trash2 className="w-4 h-4" /> Delete
+                    </button>
+                  </div>
+                </GlassPanel>
+              );
+            })}
+          </div>
+
+          {filteredHistory.length === 0 && (
+            <GlassPanel className="p-12 text-center">
+              <p className="text-white/40">
+                {listFilter === "received" ? "No letters from Razia yet." : listFilter === "sent" ? "No letters sent by you yet." : "No letters yet."}
+              </p>
+            </GlassPanel>
+          )}
         </div>
+      ) : view === "vault" ? (
+        <Suspense fallback={<div className="py-20 text-center text-white/30">Loading vault...</div>}>
+          <Vault onOpenLetter={setSelectedLetter} />
+        </Suspense>
       ) : (
         <Suspense fallback={<div className="py-20 text-center text-white/30">Loading radar...</div>}>
           <div className="space-y-12">
@@ -238,7 +331,13 @@ export default function AdminDashboard({ user, profile }: { user: User; profile:
       <AnimatePresence>
         {selectedLetter && (
           <Suspense fallback={null}>
-            <LetterReader letter={selectedLetter} onClose={() => setSelectedLetter(null)} />
+            <LetterReader
+              letter={selectedLetter}
+              onClose={() => setSelectedLetter(null)}
+              currentUserId={user.uid}
+              currentUserName={profile?.displayName || "Mohammed"}
+              canReply={selectedLetter.authorId !== user.uid}
+            />
           </Suspense>
         )}
       </AnimatePresence>
