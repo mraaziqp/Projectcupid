@@ -11,6 +11,7 @@ interface WeatherData {
   userId: string;
   socialBattery: number;
   emotion: string;
+  connectionBid?: string;
   note?: string;
   updatedAt: any;
 }
@@ -24,12 +25,22 @@ const EMOTIONS = [
   { label: "Drained", icon: Droplets, color: "text-blue-400", bg: "bg-blue-400/10", border: "border-blue-400/20" },
 ];
 
+const CONNECTION_BIDS = [
+  "Listen to me",
+  "Reassure me",
+  "Hug me",
+  "Spend quality time",
+  "Pray with me",
+  "Make me laugh"
+];
+
 export default function EmotionalWeather({ userId, userEmail }: { userId: string; userEmail: string }) {
   const [myWeather, setMyWeather] = useState<WeatherData | null>(null);
   const [partnerWeather, setPartnerWeather] = useState<WeatherData | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [draftBattery, setDraftBattery] = useState(50);
   const [draftEmotion, setDraftEmotion] = useState("Calm");
+  const [draftConnectionBid, setDraftConnectionBid] = useState("");
   const [draftNote, setDraftNote] = useState("");
   const today = format(new Date(), 'yyyy-MM-dd');
 
@@ -62,10 +73,11 @@ export default function EmotionalWeather({ userId, userEmail }: { userId: string
     if (!myWeather) return;
     setDraftBattery(myWeather.socialBattery ?? 50);
     setDraftEmotion(myWeather.emotion || "Calm");
+    setDraftConnectionBid(myWeather.connectionBid || "");
     setDraftNote(myWeather.note || "");
   }, [myWeather]);
 
-  const handleSubmit = async (socialBattery: number, emotion: string, note: string) => {
+  const handleSubmit = async (socialBattery: number, emotion: string, connectionBid: string, note: string) => {
     setSubmitting(true);
     try {
       const weatherDoc = doc(db, "weather", `${userId}-${today}`);
@@ -74,15 +86,17 @@ export default function EmotionalWeather({ userId, userEmail }: { userId: string
         date: today,
         socialBattery,
         emotion,
+        connectionBid,
         note: note.trim(),
         updatedAt: Timestamp.now()
       });
 
+      const bidSuffix = connectionBid ? ` • Bid: ${connectionBid}` : "";
       const noteSuffix = note.trim() ? ` • Note: ${note.trim()}` : "";
       await notifyPartner(
         userId,
         "Emotional weather updated",
-        `Status: ${emotion} • Social battery: ${socialBattery}%${noteSuffix}`
+        `Status: ${emotion} • Social battery: ${socialBattery}%${bidSuffix}${noteSuffix}`
       );
     } catch (e) {
       handleFirestoreError(e, OperationType.WRITE, "weather");
@@ -147,6 +161,27 @@ export default function EmotionalWeather({ userId, userEmail }: { userId: string
                  ))}
                </div>
 
+               <div className="space-y-2 pt-2">
+                 <label className="text-sm font-medium text-white/60">Connection Bid (What you need most right now)</label>
+                 <div className="flex flex-wrap gap-2">
+                   {CONNECTION_BIDS.map((bid) => (
+                     <button
+                       key={bid}
+                       onClick={() => setDraftConnectionBid(draftConnectionBid === bid ? "" : bid)}
+                       className={cn(
+                         "px-3 py-2 rounded-xl border text-[11px] font-semibold transition-all",
+                         draftConnectionBid === bid
+                           ? "bg-pink-500/15 border-pink-500/30 text-pink-300"
+                           : "bg-white/5 border-transparent text-white/50 hover:bg-white/10"
+                       )}
+                     >
+                       {bid}
+                     </button>
+                   ))}
+                 </div>
+                 <p className="text-[10px] uppercase tracking-widest text-white/25">Inspired by Gottman "bids for connection"</p>
+               </div>
+
                <div className="space-y-2">
                  <label className="text-sm font-medium text-white/60">Message for your partner (optional)</label>
                  <textarea
@@ -161,7 +196,7 @@ export default function EmotionalWeather({ userId, userEmail }: { userId: string
                </div>
 
                <button
-                 onClick={() => handleSubmit(draftBattery, draftEmotion, draftNote)}
+                 onClick={() => handleSubmit(draftBattery, draftEmotion, draftConnectionBid, draftNote)}
                  disabled={submitting}
                  className="px-4 py-2.5 rounded-xl bg-blue-500 text-white text-xs font-bold uppercase tracking-widest hover:bg-blue-600 transition-colors disabled:opacity-60"
                >
@@ -216,6 +251,11 @@ export default function EmotionalWeather({ userId, userEmail }: { userId: string
                               {getBatteryIcon(partnerWeather.socialBattery)}
                               <span className="text-sm text-white font-medium italic">{partnerWeather.emotion}</span>
                            </div>
+                           {partnerWeather.connectionBid ? (
+                             <p className="text-xs text-blue-200/80">
+                               Connection Bid: <span className="italic">{partnerWeather.connectionBid}</span>
+                             </p>
+                           ) : null}
                            {partnerWeather.note ? (
                              <p className="text-xs text-pink-200/80 italic">"{partnerWeather.note}"</p>
                            ) : null}
@@ -236,7 +276,9 @@ export default function EmotionalWeather({ userId, userEmail }: { userId: string
                         <Heart size={14} fill="currentColor" />
                      </div>
                      <p className="text-xs text-emerald-200/80 leading-relaxed italic">
-                        {partnerWeather.socialBattery < 30 || myWeather.socialBattery < 30 ? (
+                        {partnerWeather.connectionBid ? (
+                          `Turn toward her bid today: ${partnerWeather.connectionBid}.`
+                        ) : partnerWeather.socialBattery < 30 || myWeather.socialBattery < 30 ? (
                           "Sanctuary Mode engaged. Order takeout, dim the lights, and put on a low-effort movie tonight."
                         ) : (partnerWeather.socialBattery > 75 && myWeather.socialBattery > 75) ? (
                           "Synergy is high! Perfect night for co-op gaming (Overcooked! 2?) or a night out in Cape Town."
