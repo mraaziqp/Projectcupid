@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { Sparkles, Send, Calendar, Clock, Eye, Edit3, Settings, BrainCircuit, CheckCircle, AlertCircle } from "lucide-react";
+import { motion } from "motion/react";
+import { Sparkles, Send, Clock, Eye, Edit3, BrainCircuit, CheckCircle, AlertCircle } from "lucide-react";
 import GlassPanel from "./GlassPanel";
 import LetterReader from "./LetterReader";
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
-import { collection, addDoc, Timestamp, query, orderBy, limit, onSnapshot, getDocs, where } from "firebase/firestore";
+import { collection, addDoc, Timestamp, query, orderBy, limit, onSnapshot } from "firebase/firestore";
 import { format } from "date-fns";
 import { cn } from "../lib/utils";
 import { generateOllamaDraft } from "../lib/ollama";
+import { notifyPartner } from "../lib/notifications";
 
 export default function AdminEditor({ userId, onPublished }: { userId: string; onPublished?: () => void }) {
   const [title, setTitle] = useState("");
@@ -41,19 +42,7 @@ export default function AdminEditor({ userId, onPublished }: { userId: string; o
         createdAt: Timestamp.now(),
       });
 
-      // Trigger Notification for Razia
-      const raziaQuery = query(collection(db, "users"), where("role", "==", "reader"), limit(1));
-      const raziaSnap = await getDocs(raziaQuery);
-      if (!raziaSnap.empty) {
-        const raziaId = raziaSnap.docs[0].id;
-        await addDoc(collection(db, "notifications"), {
-          userId: raziaId,
-          title: "A new aurora is glowing.",
-          body: "Your daily letter is waiting.",
-          read: false,
-          createdAt: Timestamp.now()
-        });
-      }
+      await notifyPartner(userId, "A new aurora is glowing.", "Your daily letter is waiting.");
 
       setTitle("");
       setContent("");

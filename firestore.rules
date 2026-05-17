@@ -76,7 +76,7 @@ service cloud.firestore {
         request.resource.data.role == 'reader' || 
         (request.resource.data.role == 'admin' && request.auth.token.email == 'backupe9@gmail.com')
       );
-      allow update: if isAdmin() || (isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'photoURL']));
+      allow update: if isAdmin() || (isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'photoURL', 'fcmToken']));
     }
 
     // Letters

@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { Cloud, Sun, CloudRain, Zap, Battery, BatteryMedium, BatteryLow, BatteryWarning, Heart, User, UserPlus, Sparkles, Wind, Droplets } from "lucide-react";
+import { Zap, Battery, BatteryMedium, BatteryLow, BatteryWarning, Heart, User, UserPlus, Sparkles, Wind, Droplets } from "lucide-react";
 import GlassPanel from "./GlassPanel";
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
-import { collection, query, where, orderBy, limit, onSnapshot, setDoc, doc, Timestamp, getDocs } from "firebase/firestore";
+import { collection, query, where, onSnapshot, setDoc, doc, Timestamp } from "firebase/firestore";
 import { format } from "date-fns";
 import { cn } from "../lib/utils";
+import { notifyPartner } from "../lib/notifications";
 
 interface WeatherData {
   userId: string;
@@ -19,6 +19,7 @@ const EMOTIONS = [
   { label: "Energized", icon: Sparkles, color: "text-amber-400", bg: "bg-amber-400/10", border: "border-amber-400/20" },
   { label: "Calm", icon: Wind, color: "text-emerald-400", bg: "bg-emerald-400/10", border: "border-emerald-400/20" },
   { label: "Needing Affection", icon: Heart, color: "text-rose-400", bg: "bg-rose-400/10", border: "border-rose-400/20" },
+  { label: "I Miss You", icon: Heart, color: "text-pink-400", bg: "bg-pink-400/10", border: "border-pink-400/20" },
   { label: "Overwhelmed", icon: Zap, color: "text-indigo-400", bg: "bg-indigo-400/10", border: "border-indigo-400/20" },
   { label: "Drained", icon: Droplets, color: "text-blue-400", bg: "bg-blue-400/10", border: "border-blue-400/20" },
 ];
@@ -29,6 +30,7 @@ export default function EmotionalWeather({ userId, userEmail }: { userId: string
   const [submitting, setSubmitting] = useState(false);
   const [draftBattery, setDraftBattery] = useState(50);
   const [draftEmotion, setDraftEmotion] = useState("Calm");
+  const [draftNote, setDraftNote] = useState("");
   const today = format(new Date(), 'yyyy-MM-dd');
 
   useEffect(() => {
@@ -60,9 +62,10 @@ export default function EmotionalWeather({ userId, userEmail }: { userId: string
     if (!myWeather) return;
     setDraftBattery(myWeather.socialBattery ?? 50);
     setDraftEmotion(myWeather.emotion || "Calm");
+    setDraftNote(myWeather.note || "");
   }, [myWeather]);
 
-  const handleSubmit = async (socialBattery: number, emotion: string) => {
+  const handleSubmit = async (socialBattery: number, emotion: string, note: string) => {
     setSubmitting(true);
     try {
       const weatherDoc = doc(db, "weather", `${userId}-${today}`);
@@ -71,8 +74,16 @@ export default function EmotionalWeather({ userId, userEmail }: { userId: string
         date: today,
         socialBattery,
         emotion,
+        note: note.trim(),
         updatedAt: Timestamp.now()
       });
+
+      const noteSuffix = note.trim() ? ` • Note: ${note.trim()}` : "";
+      await notifyPartner(
+        userId,
+        "Emotional weather updated",
+        `Status: ${emotion} • Social battery: ${socialBattery}%${noteSuffix}`
+      );
     } catch (e) {
       handleFirestoreError(e, OperationType.WRITE, "weather");
     } finally {
@@ -136,8 +147,21 @@ export default function EmotionalWeather({ userId, userEmail }: { userId: string
                  ))}
                </div>
 
+               <div className="space-y-2">
+                 <label className="text-sm font-medium text-white/60">Message for your partner (optional)</label>
+                 <textarea
+                   value={draftNote}
+                   onChange={(e) => setDraftNote(e.target.value)}
+                   maxLength={140}
+                   rows={3}
+                   placeholder="Example: I need an extra hug tonight."
+                   className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-blue-500/50"
+                 />
+                 <p className="text-[10px] uppercase tracking-widest text-white/30">{draftNote.length}/140</p>
+               </div>
+
                <button
-                 onClick={() => handleSubmit(draftBattery, draftEmotion)}
+                 onClick={() => handleSubmit(draftBattery, draftEmotion, draftNote)}
                  disabled={submitting}
                  className="px-4 py-2.5 rounded-xl bg-blue-500 text-white text-xs font-bold uppercase tracking-widest hover:bg-blue-600 transition-colors disabled:opacity-60"
                >
@@ -187,9 +211,14 @@ export default function EmotionalWeather({ userId, userEmail }: { userId: string
                           <span className="text-[10px] text-white/20">{partnerWeather ? "Updated" : "Silent"}</span>
                        </div>
                        {partnerWeather ? (
-                         <div className="flex items-center gap-3">
-                            {getBatteryIcon(partnerWeather.socialBattery)}
-                            <span className="text-sm text-white font-medium italic">{partnerWeather.emotion}</span>
+                         <div className="space-y-2">
+                           <div className="flex items-center gap-3">
+                              {getBatteryIcon(partnerWeather.socialBattery)}
+                              <span className="text-sm text-white font-medium italic">{partnerWeather.emotion}</span>
+                           </div>
+                           {partnerWeather.note ? (
+                             <p className="text-xs text-pink-200/80 italic">"{partnerWeather.note}"</p>
+                           ) : null}
                          </div>
                        ) : (
                          <p className="text-sm text-white/20 italic">No update yet</p>
