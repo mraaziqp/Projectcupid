@@ -1,13 +1,14 @@
 import { lazy, Suspense, useState, useEffect } from "react";
-import { collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
+import { collection, query, where, orderBy, onSnapshot, addDoc, Timestamp } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 import LetterCard from "./LetterCard";
 import { AnimatePresence, motion } from "motion/react";
-import { BookHeart, Package, Heart, Share2 } from "lucide-react";
+import { BookHeart, Package, Heart, Share2, Send } from "lucide-react";
 import GlassPanel from "./GlassPanel";
 import { cn } from "../lib/utils";
 import { User } from "firebase/auth";
 import { UserProfile } from "../hooks/useAuth";
+import { notifyPartner } from "../lib/notifications";
 
 const LetterReader = lazy(() => import("./LetterReader"));
 const Vault = lazy(() => import("./Vault"));
@@ -22,6 +23,7 @@ interface Letter {
   publishDate: any;
   isFavorite: boolean;
   isRead?: boolean;
+  authorId?: string;
 }
 
 export default function Dashboard({ user, profile }: { user: User; profile: UserProfile | null }) {
@@ -30,6 +32,10 @@ export default function Dashboard({ user, profile }: { user: User; profile: User
   const [view, setView] = useState<'history' | 'vault' | 'connection'>('history');
   const [filter, setFilter] = useState<'all' | 'favorites'>('all');
   const [loading, setLoading] = useState(true);
+  const [letterTitle, setLetterTitle] = useState("");
+  const [letterContent, setLetterContent] = useState("");
+  const [sendingLetter, setSendingLetter] = useState(false);
+  const [sendState, setSendState] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   useEffect(() => {
     const q = query(
@@ -51,6 +57,49 @@ export default function Dashboard({ user, profile }: { user: User; profile: User
   const filteredLetters = filter === 'favorites' 
     ? letters.filter(l => l.isFavorite) 
     : letters;
+
+  const handleSendLetterBack = async () => {
+    const trimmedContent = letterContent.trim();
+    if (!trimmedContent) return;
+
+    const trimmedTitle = letterTitle.trim();
+    const finalTitle = trimmedTitle || `A note from ${profile?.displayName?.split(" ")[0] || "Razia"}`;
+
+    setSendingLetter(true);
+    setSendState(null);
+    try {
+      await addDoc(collection(db, "letters"), {
+        title: finalTitle,
+        content: trimmedContent,
+        publishDate: Timestamp.now(),
+        isPublished: true,
+        isFavorite: false,
+        isRead: false,
+        authorId: user.uid,
+        authorRole: "reader",
+        recipientRole: "admin",
+        createdAt: Timestamp.now(),
+      });
+
+      await notifyPartner(
+        user.uid,
+        "Razia sent you a letter",
+        finalTitle
+      );
+
+      setLetterTitle("");
+      setLetterContent("");
+      setSendState({ type: "success", message: "Letter sent successfully." });
+    } catch (error) {
+      try {
+        handleFirestoreError(error, OperationType.CREATE, "letters");
+      } catch {
+        setSendState({ type: "error", message: "Could not send right now. Please try again." });
+      }
+    } finally {
+      setSendingLetter(false);
+    }
+  };
 
   return (
     <div className="max-w-6xl mx-auto px-6 space-y-6 pb-32">
@@ -215,6 +264,46 @@ export default function Dashboard({ user, profile }: { user: User; profile: User
              </button>
           </GlassPanel>
 
+          {/* Write Back Widget */}
+          <GlassPanel className="p-6 space-y-4">
+            <div className="space-y-1">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-white/50">Write Back</h3>
+              <p className="text-xs text-white/40">Send Razia-to-Mohammed letters from your side too.</p>
+            </div>
+
+            <input
+              value={letterTitle}
+              onChange={(e) => setLetterTitle(e.target.value)}
+              placeholder="Letter title (optional)"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-pink-500/40"
+            />
+            <textarea
+              value={letterContent}
+              onChange={(e) => setLetterContent(e.target.value)}
+              placeholder="Write your heart out..."
+              rows={4}
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/20 resize-none focus:outline-none focus:border-pink-500/40"
+            />
+            <button
+              onClick={handleSendLetterBack}
+              disabled={sendingLetter || !letterContent.trim()}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white text-black text-xs font-bold uppercase tracking-widest hover:bg-pink-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Send className="w-4 h-4" />
+              {sendingLetter ? "Sending..." : "Send Letter"}
+            </button>
+            {sendState && (
+              <p
+                className={cn(
+                  "text-xs",
+                  sendState.type === "success" ? "text-emerald-300" : "text-rose-300"
+                )}
+              >
+                {sendState.message}
+              </p>
+            )}
+          </GlassPanel>
+
           {/* Hardware Widget */}
           <div className="h-48 bg-gradient-to-br from-blue-600/10 to-purple-600/10 backdrop-blur-2xl border border-white/10 rounded-[32px] p-8 relative overflow-hidden flex flex-col justify-end">
             <div className="absolute top-0 right-0 p-6 text-white/5 pointer-events-none transform rotate-12">
@@ -247,7 +336,10 @@ export default function Dashboard({ user, profile }: { user: User; profile: User
           <Suspense fallback={null}>
             <LetterReader 
               letter={selectedLetter} 
-              onClose={() => setSelectedLetter(null)} 
+              onClose={() => setSelectedLetter(null)}
+              currentUserId={user.uid}
+              currentUserName={profile?.displayName || "Razia"}
+              canReply={selectedLetter.authorId !== user.uid}
             />
           </Suspense>
         )}

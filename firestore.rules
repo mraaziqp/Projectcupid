@@ -32,7 +32,25 @@ service cloud.firestore {
     function isValidLetter(data) {
       return data.title is string && data.title.size() <= 200 &&
              data.content is string && data.content.size() <= 10000 &&
-             data.authorId == request.auth.uid;
+             data.authorId is string &&
+             data.publishDate is timestamp &&
+             data.isPublished is bool &&
+             data.isFavorite is bool &&
+             data.isRead is bool;
+    }
+
+    function isValidReply(data) {
+      return data.letterId is string &&
+             data.content is string &&
+             data.content.size() > 0 &&
+             data.content.size() <= 2000 &&
+             data.authorId == request.auth.uid &&
+             data.createdAt is timestamp;
+    }
+
+    function canReadLetter(letterId) {
+      let letter = get(/databases/$(database)/documents/letters/$(letterId)).data;
+      return isAdmin() || (isReader() && letter.isPublished == true && letter.publishDate <= request.time);
     }
 
     function isValidCycle(data) {
@@ -82,10 +100,20 @@ service cloud.firestore {
     // Letters
     match /letters/{letterId} {
       allow read: if isAdmin() || (isReader() && resource.data.isPublished == true && resource.data.publishDate <= request.time);
-      allow create: if isAdmin() && isValidLetter(request.resource.data);
+      allow create: if isSignedIn() && isValidLetter(request.resource.data) && request.resource.data.authorId == request.auth.uid && (
+        isAdmin() || (isReader() && request.resource.data.isPublished == true && request.resource.data.publishDate <= request.time)
+      );
       allow update: if (isAdmin() && isValidLetter(request.resource.data)) || 
                        (isReader() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isFavorite', 'isRead']));
       allow delete: if isAdmin();
+    }
+
+    // Letter Replies
+    match /letter_replies/{replyId} {
+      allow read: if isSignedIn() && canReadLetter(resource.data.letterId);
+      allow create: if isSignedIn() && isValidReply(request.resource.data) && canReadLetter(request.resource.data.letterId);
+      allow update: if isSignedIn() && isOwner(resource.data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content']);
+      allow delete: if isAdmin() || (isSignedIn() && isOwner(resource.data.authorId));
     }
 
     // Vault

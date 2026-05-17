@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, Timestamp } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
-import { List, Plus, Heart, Eye, Edit3, Save, Trash2, X, Clock4, CheckCircle2, Activity } from "lucide-react";
+import { List, Plus, Heart, Eye, Edit3, Save, Trash2, X, Clock4, CheckCircle2 } from "lucide-react";
 import GlassPanel from "./GlassPanel";
 import { format } from "date-fns";
 import { User } from "firebase/auth";
@@ -142,13 +142,13 @@ export default function AdminDashboard({ user, profile }: { user: User; profile:
             <Plus className="w-4 h-4" /> Write
           </button>
             <button
-              onClick={() => setView("radar")}
+              onClick={() => setView("list")}
               className={cn(
                 "px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-all",
-                view === "radar" ? "bg-white text-black shadow-xl" : "text-white/40 hover:text-white"
+                view === "list" ? "bg-white text-black shadow-xl" : "text-white/40 hover:text-white"
               )}
             >
-              <Heart className="w-4 h-4" /> Connection
+              <List className="w-4 h-4" /> Letters
             </button>
           <button
             onClick={() => setView("radar")}
@@ -157,7 +157,7 @@ export default function AdminDashboard({ user, profile }: { user: User; profile:
               view === "radar" ? "bg-white text-black shadow-xl" : "text-white/40 hover:text-white"
             )}
           >
-            <Activity className="w-4 h-4" /> Radar
+            <Heart className="w-4 h-4" /> Radar
           </button>
         </div>
       </div>
