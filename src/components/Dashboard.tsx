@@ -72,7 +72,7 @@ export default function Dashboard({ user, profile }: { user: User; profile: User
                       animate={{ opacity: 1, x: 0 }}
                       className="text-xs uppercase tracking-[0.3em] text-pink-500 font-bold"
                     >
-                      Welcome Home, Razia
+                       Welcome Home, {profile?.displayName?.split(" ")[0] || "Love"}
                     </motion.p>
                     <motion.h1 
                       initial={{ opacity: 0, x: -20 }}

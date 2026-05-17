@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, Timestamp } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
-import { List, Plus, Activity, Eye, Edit3, Save, Trash2, X, Clock4, CheckCircle2 } from "lucide-react";
+import { List, Plus, Heart, Eye, Edit3, Save, Trash2, X, Clock4, CheckCircle2 } from "lucide-react";
 import GlassPanel from "./GlassPanel";
 import { format } from "date-fns";
 import { User } from "firebase/auth";
@@ -26,7 +26,7 @@ interface LetterRecord {
   authorId?: string;
 }
 
-export default function AdminDashboard({ user }: { user: User; profile: UserProfile | null }) {
+export default function AdminDashboard({ user, profile }: { user: User; profile: UserProfile | null }) {
   const [history, setHistory] = useState<LetterRecord[]>([]);
   const [view, setView] = useState<"write" | "list" | "radar">("write");
   const [selectedLetter, setSelectedLetter] = useState<LetterRecord | null>(null);
@@ -115,7 +115,7 @@ export default function AdminDashboard({ user }: { user: User; profile: UserProf
     <div className="max-w-5xl mx-auto px-6 pb-32 space-y-8">
       <div className="flex justify-between items-end">
         <div className="space-y-1">
-          <p className="text-[10px] uppercase tracking-[0.3em] text-pink-500 font-bold">Curator Workspace</p>
+          <p className="text-[10px] uppercase tracking-[0.3em] text-pink-500 font-bold">Welcome, {profile?.displayName?.split(" ")[0] || "Curator"}</p>
           <h1 className="text-4xl font-light italic font-serif text-white">Cupid Command</h1>
         </div>
         <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10 backdrop-blur-xl">
@@ -128,15 +128,15 @@ export default function AdminDashboard({ user }: { user: User; profile: UserProf
           >
             <Plus className="w-4 h-4" /> Write
           </button>
-          <button
-            onClick={() => setView("list")}
-            className={cn(
-              "px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-all",
-              view === "list" ? "bg-white text-black shadow-xl" : "text-white/40 hover:text-white"
-            )}
-          >
-            <List className="w-4 h-4" /> History
-          </button>
+            <button
+              onClick={() => setView("radar")}
+              className={cn(
+                "px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-all",
+                view === "radar" ? "bg-white text-black shadow-xl" : "text-white/40 hover:text-white"
+              )}
+            >
+              <Heart className="w-4 h-4" /> Connection
+            </button>
           <button
             onClick={() => setView("radar")}
             className={cn(
