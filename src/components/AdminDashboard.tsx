@@ -1,7 +1,7 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, Timestamp } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
-import { List, Plus, Heart, Eye, Edit3, Save, Trash2, X, Clock4, CheckCircle2, Inbox, Send, Archive } from "lucide-react";
+import { List, Plus, Heart, Eye, Edit3, Save, Trash2, X, Clock4, CheckCircle2, Inbox, Send, Archive, Search, Filter } from "lucide-react";
 import GlassPanel from "./GlassPanel";
 import { format } from "date-fns";
 import { User } from "firebase/auth";
@@ -34,6 +34,9 @@ export default function AdminDashboard({ user, profile }: { user: User; profile:
   const [history, setHistory] = useState<LetterRecord[]>([]);
   const [view, setView] = useState<"write" | "list" | "vault" | "radar">("list");
   const [listFilter, setListFilter] = useState<"received" | "sent" | "all">("received");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [unreadOnly, setUnreadOnly] = useState(false);
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const [selectedLetter, setSelectedLetter] = useState<LetterRecord | null>(null);
   const [editingLetter, setEditingLetter] = useState<LetterRecord | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -131,10 +134,30 @@ export default function AdminDashboard({ user, profile }: { user: User; profile:
   const receivedLetters = history.filter((item) => item.authorId && item.authorId !== user.uid);
   const sentLetters = history.filter((item) => !item.authorId || item.authorId === user.uid);
 
-  const filteredHistory =
-    listFilter === "received" ? receivedLetters :
-    listFilter === "sent" ? sentLetters :
-    history;
+  const filteredHistory = useMemo(() => {
+    const scopeFiltered =
+      listFilter === "received" ? receivedLetters :
+      listFilter === "sent" ? sentLetters :
+      history;
+
+    const queryText = searchTerm.trim().toLowerCase();
+
+    const refined = scopeFiltered.filter((item) => {
+      const matchesUnread = unreadOnly ? !item.isRead : true;
+      if (!matchesUnread) return false;
+
+      if (!queryText) return true;
+      const title = item.title?.toLowerCase?.() || "";
+      const content = item.content?.toLowerCase?.() || "";
+      return title.includes(queryText) || content.includes(queryText);
+    });
+
+    return [...refined].sort((a, b) => {
+      const aTime = a.publishDate?.toDate ? a.publishDate.toDate().getTime() : 0;
+      const bTime = b.publishDate?.toDate ? b.publishDate.toDate().getTime() : 0;
+      return sortOrder === "newest" ? bTime - aTime : aTime - bTime;
+    });
+  }, [history, listFilter, receivedLetters, searchTerm, sentLetters, sortOrder, unreadOnly]);
 
   const unreadFromHerCount = receivedLetters.filter((item) => !item.isRead).length;
 
@@ -163,6 +186,11 @@ export default function AdminDashboard({ user, profile }: { user: User; profile:
             )}
           >
             <List className="w-4 h-4" /> Letters
+            {unreadFromHerCount > 0 && (
+              <span className="ml-1 min-w-5 h-5 px-1 rounded-full bg-pink-500 text-white text-[10px] leading-5 text-center">
+                {unreadFromHerCount}
+              </span>
+            )}
           </button>
           <button
             onClick={() => setView("vault")}
@@ -240,6 +268,32 @@ export default function AdminDashboard({ user, profile }: { user: User; profile:
             >
               <List className="w-3.5 h-3.5" /> All Letters
             </button>
+            <button
+              onClick={() => setUnreadOnly((prev) => !prev)}
+              className={cn(
+                "px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-widest flex items-center gap-2 border",
+                unreadOnly
+                  ? "bg-amber-500/15 border-amber-500/40 text-amber-300"
+                  : "bg-white/5 border-white/10 text-white/50 hover:text-white"
+              )}
+            >
+              <Filter className="w-3.5 h-3.5" /> Unread Only
+            </button>
+            <button
+              onClick={() => setSortOrder((prev) => (prev === "newest" ? "oldest" : "newest"))}
+              className="px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-widest flex items-center gap-2 border bg-white/5 border-white/10 text-white/50 hover:text-white"
+            >
+              {sortOrder === "newest" ? "Newest First" : "Oldest First"}
+            </button>
+            <div className="ml-auto w-full md:w-auto md:min-w-[280px] relative">
+              <Search className="w-4 h-4 text-white/30 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search title or content..."
+                className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-3 py-2 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-pink-500/30"
+              />
+            </div>
           </GlassPanel>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -253,6 +307,7 @@ export default function AdminDashboard({ user, profile }: { user: User; profile:
                     <p className="text-[10px] uppercase tracking-widest text-white/30 font-bold">
                       {item.publishDate?.toDate ? format(item.publishDate.toDate(), "PPpp") : "No publish date"}
                     </p>
+                    <p className="text-sm text-white/45 leading-relaxed line-clamp-2 pt-1">{item.content}</p>
                   </div>
 
                   <div className="flex items-center justify-between gap-3 flex-wrap">
