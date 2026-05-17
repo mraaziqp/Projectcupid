@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Zap, Battery, BatteryMedium, BatteryLow, BatteryWarning, Heart, User, UserPlus, Sparkles, Wind, Droplets } from "lucide-react";
+import { Zap, Battery, BatteryMedium, BatteryLow, BatteryWarning, Heart, Sparkles, Wind, Droplets, Star, Coffee, Moon, Flame, Ghost, Cloudy, Smile, Music } from "lucide-react";
 import GlassPanel from "./GlassPanel";
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 import { collection, query, where, onSnapshot, setDoc, doc, Timestamp } from "firebase/firestore";
@@ -17,21 +17,35 @@ interface WeatherData {
 }
 
 const EMOTIONS = [
-  { label: "Energized", icon: Sparkles, color: "text-amber-400", bg: "bg-amber-400/10", border: "border-amber-400/20" },
-  { label: "Calm", icon: Wind, color: "text-emerald-400", bg: "bg-emerald-400/10", border: "border-emerald-400/20" },
-  { label: "Needing Affection", icon: Heart, color: "text-rose-400", bg: "bg-rose-400/10", border: "border-rose-400/20" },
-  { label: "I Miss You", icon: Heart, color: "text-pink-400", bg: "bg-pink-400/10", border: "border-pink-400/20" },
-  { label: "Overwhelmed", icon: Zap, color: "text-indigo-400", bg: "bg-indigo-400/10", border: "border-indigo-400/20" },
-  { label: "Drained", icon: Droplets, color: "text-blue-400", bg: "bg-blue-400/10", border: "border-blue-400/20" },
+  { label: "Energized ✨", icon: Sparkles, color: "text-amber-400", bg: "bg-amber-400/10", border: "border-amber-400/20" },
+  { label: "Calm & Cozy 🌿", icon: Wind, color: "text-emerald-400", bg: "bg-emerald-400/10", border: "border-emerald-400/20" },
+  { label: "Lovesick 💗", icon: Heart, color: "text-rose-400", bg: "bg-rose-400/10", border: "border-rose-400/20" },
+  { label: "I Miss You 🥺", icon: Heart, color: "text-pink-400", bg: "bg-pink-400/10", border: "border-pink-400/20" },
+  { label: "On Cloud 9 ☁️", icon: Star, color: "text-sky-300", bg: "bg-sky-300/10", border: "border-sky-300/20" },
+  { label: "Silly & Goofy 🤪", icon: Smile, color: "text-yellow-400", bg: "bg-yellow-400/10", border: "border-yellow-400/20" },
+  { label: "Soft & Mushy 🍮", icon: Moon, color: "text-purple-300", bg: "bg-purple-300/10", border: "border-purple-300/20" },
+  { label: "Spicy & Feisty 🔥", icon: Flame, color: "text-orange-400", bg: "bg-orange-400/10", border: "border-orange-400/20" },
+  { label: "Overwhelmed 🌊", icon: Zap, color: "text-indigo-400", bg: "bg-indigo-400/10", border: "border-indigo-400/20" },
+  { label: "Drained 🪫", icon: Droplets, color: "text-blue-400", bg: "bg-blue-400/10", border: "border-blue-400/20" },
+  { label: "Need a Hug 🫂", icon: Cloudy, color: "text-violet-300", bg: "bg-violet-300/10", border: "border-violet-300/20" },
+  { label: "Brain Full 🫠", icon: Ghost, color: "text-slate-400", bg: "bg-slate-400/10", border: "border-slate-400/20" },
+  { label: "Caffeinated ☕", icon: Coffee, color: "text-amber-600", bg: "bg-amber-600/10", border: "border-amber-600/20" },
+  { label: "In My Feels 🎵", icon: Music, color: "text-fuchsia-400", bg: "bg-fuchsia-400/10", border: "border-fuchsia-400/20" },
 ];
 
 const CONNECTION_BIDS = [
   "Listen to me",
   "Reassure me",
-  "Hug me",
+  "Hug me tight",
   "Spend quality time",
   "Pray with me",
-  "Make me laugh"
+  "Make me laugh",
+  "Tell me I'm pretty",
+  "Dance with me",
+  "Just sit with me",
+  "Send me a voice note",
+  "Cook something together",
+  "Watch something silly",
 ];
 
 export default function EmotionalWeather({ userId, userEmail }: { userId: string; userEmail: string }) {
