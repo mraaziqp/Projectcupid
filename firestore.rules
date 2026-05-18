@@ -80,13 +80,6 @@ service cloud.firestore {
              data.status in ['pending', 'fulfilled'];
     }
 
-    function isValidNotification(data) {
-      return data.userId is string &&
-             data.title is string &&
-             data.body is string &&
-             data.read is bool;
-    }
-
     // Users
     match /users/{userId} {
       allow read: if isSignedIn();
