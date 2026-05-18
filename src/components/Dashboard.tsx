@@ -81,11 +81,10 @@ export default function Dashboard({ user, profile }: { user: User; profile: User
         createdAt: Timestamp.now(),
       });
 
-      await notifyPartner(
-        user.uid,
-        "Razia sent you a letter",
-        finalTitle
-      );
+      // Keep the letter write independent from notification delivery.
+      notifyPartner(user.uid, "Razia sent you a letter", finalTitle).catch((notifyError) => {
+        console.error("Partner notification failed after sending letter:", notifyError);
+      });
 
       setLetterTitle("");
       setLetterContent("");

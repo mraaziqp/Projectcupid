@@ -42,7 +42,10 @@ export default function AdminEditor({ userId, onPublished }: { userId: string; o
         createdAt: Timestamp.now(),
       });
 
-      await notifyPartner(userId, "A new aurora is glowing.", "Your daily letter is waiting.");
+      // Keep publishing responsive even if the notification path has a transient failure.
+      notifyPartner(userId, "A new aurora is glowing.", "Your daily letter is waiting.").catch((notifyError) => {
+        console.error("Partner notification failed after publishing letter:", notifyError);
+      });
 
       setTitle("");
       setContent("");

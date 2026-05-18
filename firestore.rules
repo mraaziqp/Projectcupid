@@ -101,7 +101,7 @@ service cloud.firestore {
     match /letters/{letterId} {
       allow read: if isAdmin() || (isReader() && resource.data.isPublished == true && resource.data.publishDate <= request.time);
       allow create: if isSignedIn() && isValidLetter(request.resource.data) && request.resource.data.authorId == request.auth.uid && (
-        isAdmin() || (isReader() && request.resource.data.isPublished == true && request.resource.data.publishDate <= request.time)
+        isAdmin() || (isReader() && request.resource.data.isPublished == true)
       );
       allow update: if (isAdmin() && isValidLetter(request.resource.data)) || 
                        (isReader() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isFavorite', 'isRead']));
