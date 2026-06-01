@@ -12,152 +12,57 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-    }
-
     function isAdmin() {
       return isSignedIn() && 
              exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-             getUserData().role == 'admin';
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
     function isReader() {
       return isSignedIn() && 
              exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-             getUserData().role == 'reader';
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'reader';
     }
 
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    // Validation helpers
-    function isValidLetter(data) {
-      return data.title is string && data.title.size() <= 200 &&
-             data.content is string && data.content.size() <= 10000 &&
-             data.authorId is string &&
-             data.publishDate is timestamp &&
-             data.isPublished is bool &&
-             data.isFavorite is bool &&
-             data.isRead is bool;
-    }
-
-    function isValidReply(data) {
-      return data.letterId is string &&
-             data.content is string &&
-             data.content.size() > 0 &&
-             data.authorId == request.auth.uid;
-    }
-
-    function canReadLetter(letterId) {
-      return exists(/databases/$(database)/documents/letters/$(letterId)) && (
-        isAdmin() || 
-        get(/databases/$(database)/documents/letters/$(letterId)).data.authorId == request.auth.uid ||
-        (
-          isReader() && 
-          get(/databases/$(database)/documents/letters/$(letterId)).data.isPublished == true
-        )
-      );
-    }
-
-    function isValidCycle(data) {
-      return data.userId == request.auth.uid &&
-             data.startDate is timestamp &&
-             data.duration is number;
-    }
-
-    function isValidWeather(data) {
-      return data.userId == request.auth.uid &&
-             data.date is string &&
-             data.socialBattery is number &&
-             data.socialBattery >= 0 && data.socialBattery <= 100 &&
-             data.emotion is string;
-    }
-
-    function isValidDrop(data) {
-      return data.userId == request.auth.uid &&
-             data.type in ['note', 'link', 'media'] &&
-             data.content is string &&
-             data.category is string;
-    }
-
-    function isValidQuest(data) {
-      return data.userId == request.auth.uid &&
-             data.craving is string &&
-             data.status in ['pending', 'fulfilled'];
+    function isAllowedUser() {
+      return isAdmin() || isReader();
     }
 
     // Users
     match /users/{userId} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn() && isOwner(userId) && (
+      allow create: if isSignedIn() && request.auth.uid == userId && (
         request.resource.data.role == 'reader' || 
         (request.resource.data.role == 'admin' && request.auth.token.email == 'backupe9@gmail.com')
       );
-      allow update: if isAdmin() || (isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'photoURL', 'fcmToken']));
+      allow update: if isAdmin() || (isSignedIn() && request.auth.uid == userId);
     }
 
-    // Letters
-    match /letters/{letterId} {
-      allow read: if isAdmin() || (isSignedIn() && resource.data.authorId == request.auth.uid) || (isReader() && resource.data.isPublished == true);
-      allow create: if isSignedIn() && isValidLetter(request.resource.data) && request.resource.data.authorId == request.auth.uid && (
-        isAdmin() || (isReader() && request.resource.data.isPublished == true)
-      );
-      allow update: if (isAdmin() && isValidLetter(request.resource.data)) || 
-                       (isReader() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isFavorite', 'isRead']));
-      allow delete: if isAdmin();
+    // App Collections
+    match /letters/{docId} {
+      allow read, write: if isAllowedUser();
     }
-
-    // Letter Replies
-    match /letter_replies/{replyId} {
-      allow read: if isSignedIn() && (isAdmin() || isReader() || isOwner(resource.data.authorId));
-      allow create: if isSignedIn() && isValidReply(request.resource.data) && (isAdmin() || isReader());
-      allow update: if isSignedIn() && isOwner(resource.data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content']);
-      allow delete: if isAdmin() || (isSignedIn() && isOwner(resource.data.authorId));
+    match /letter_replies/{docId} {
+      allow read, write: if isAllowedUser();
     }
-
-    // Vault
-    match /vault/{itemId} {
-      allow read: if isSignedIn();
-      allow create, update, delete: if isAdmin();
+    match /vault/{docId} {
+      allow read: if isAllowedUser();
+      allow write: if isAdmin();
     }
-
-    // Cycle Logs
-    match /cycle_logs/{logId} {
-      allow read: if isSignedIn();
-      allow create, update: if isReader() && isValidCycle(request.resource.data);
-      allow delete: if isAdmin();
+    match /cycle_logs/{docId} {
+      allow read, write: if isAllowedUser();
     }
-
-    // Emotional Weather
-    match /weather/{weatherId} {
-      allow read: if isSignedIn();
-      allow create, update: if isSignedIn() && isValidWeather(request.resource.data);
-      allow delete: if isAdmin();
+    match /weather/{docId} {
+      allow read, write: if isAllowedUser();
     }
-
-    // Us Drops
-    match /us_drops/{dropId} {
-      allow read: if isSignedIn();
-      allow create: if isAdmin() && isValidDrop(request.resource.data);
-      allow delete: if isAdmin();
+    match /us_drops/{docId} {
+      allow read, write: if isAllowedUser();
     }
-
-    // Care Quests
-    match /care_quests/{questId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && isValidQuest(request.resource.data);
-      allow update: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
-      allow delete: if isAdmin();
+    match /care_quests/{docId} {
+      allow read, write: if isAllowedUser();
     }
-
-    // Notifications
-    match /notifications/{notifId} {
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+    match /notifications/{docId} {
+      allow read, write: if isAllowedUser();
     }
   }
 }
