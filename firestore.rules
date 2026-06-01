@@ -47,9 +47,7 @@ service cloud.firestore {
       return data.letterId is string &&
              data.content is string &&
              data.content.size() > 0 &&
-             data.content.size() <= 2000 &&
-             data.authorId == request.auth.uid &&
-             data.createdAt is timestamp;
+             data.authorId == request.auth.uid;
     }
 
     function canReadLetter(letterId) {
@@ -113,8 +111,8 @@ service cloud.firestore {
 
     // Letter Replies
     match /letter_replies/{replyId} {
-      allow read: if isSignedIn() && canReadLetter(resource.data.letterId);
-      allow create: if isSignedIn() && isValidReply(request.resource.data) && canReadLetter(request.resource.data.letterId);
+      allow read: if isSignedIn() && (isAdmin() || isReader() || isOwner(resource.data.authorId));
+      allow create: if isSignedIn() && isValidReply(request.resource.data) && (isAdmin() || isReader());
       allow update: if isSignedIn() && isOwner(resource.data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content']);
       allow delete: if isAdmin() || (isSignedIn() && isOwner(resource.data.authorId));
     }
