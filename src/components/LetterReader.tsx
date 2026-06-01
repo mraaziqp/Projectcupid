@@ -1,9 +1,9 @@
 import { motion, AnimatePresence } from "motion/react";
-import { X, Heart, Star } from "lucide-react";
+import { X, Heart, Star, Edit2, Trash2, Check } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { format } from "date-fns";
 import GlassPanel from "./GlassPanel";
-import { doc, updateDoc, collection, query, where, onSnapshot, addDoc, Timestamp, orderBy } from "firebase/firestore";
+import { doc, updateDoc, collection, query, where, onSnapshot, addDoc, Timestamp, orderBy, deleteDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { cn } from "../lib/utils";
 import { useState, useEffect } from "react";
@@ -48,6 +48,17 @@ export default function LetterReader({
   const [replyText, setReplyText] = useState("");
   const [sendingReply, setSendingReply] = useState(false);
   const [replyState, setReplyState] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
+  const [editedReplyContent, setEditedReplyContent] = useState("");
+  
+  const [isEditingLetter, setIsEditingLetter] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(letter.title);
+  const [editedContent, setEditedContent] = useState(letter.content);
+
+  useEffect(() => {
+    setEditedTitle(letter.title);
+    setEditedContent(letter.content);
+  }, [letter]);
   const date = letter.publishDate?.toDate ? letter.publishDate.toDate() : new Date();
   const isPersistedLetter = letter.id !== "preview" && !letter.id.startsWith("vault-");
   const letterIsFromCurrentUser = Boolean(currentUserId && letter.authorId === currentUserId);
@@ -102,6 +113,55 @@ export default function LetterReader({
       setReplyState({ type: "error", message: "Could not send reply right now." });
     } finally {
       setSendingReply(false);
+    }
+  };
+
+  const handleEditReply = (reply: LetterReply) => {
+    setEditingReplyId(reply.id);
+    setEditedReplyContent(reply.content);
+  };
+
+  const handleSaveReply = async (replyId: string) => {
+    if (!editedReplyContent.trim()) return;
+    try {
+      await updateDoc(doc(db, "letter_replies", replyId), {
+        content: editedReplyContent.trim()
+      });
+      setEditingReplyId(null);
+    } catch (e) {
+      console.error("Error updating reply:", e);
+    }
+  };
+
+  const handleDeleteReply = async (replyId: string) => {
+    if (!confirm("Are you sure you want to delete this reply?")) return;
+    try {
+      await deleteDoc(doc(db, "letter_replies", replyId));
+    } catch (e) {
+      console.error("Error deleting reply:", e);
+    }
+  };
+
+  const handleSaveLetter = async () => {
+    if (!editedContent.trim()) return;
+    try {
+      await updateDoc(doc(db, "letters", letter.id), {
+        title: editedTitle.trim(),
+        content: editedContent.trim()
+      });
+      setIsEditingLetter(false);
+    } catch (e) {
+      console.error("Error updating letter:", e);
+    }
+  };
+
+  const handleDeleteLetter = async () => {
+    if (!confirm("Are you sure you want to delete this letter?")) return;
+    try {
+      await deleteDoc(doc(db, "letters", letter.id));
+      onClose();
+    } catch (e) {
+      console.error("Error deleting letter:", e);
     }
   };
 
@@ -195,7 +255,7 @@ export default function LetterReader({
   };
 
   // Splitting content for staggered typing effect
-  const paragraphs = letter.content.split('\n\n').filter(Boolean);
+  const paragraphs = editedContent.split('\n\n').filter(Boolean);
 
   return (
     <motion.div
@@ -218,11 +278,27 @@ export default function LetterReader({
               <p className="text-[10px] uppercase tracking-[0.2em] text-pink-400 font-bold">
                  Daily Aurora • {format(date, "MMMM do, yyyy")}
               </p>
-              <h2 className="text-2xl font-light italic font-serif text-white">{letter.title}</h2>
+              <h2 className="text-2xl font-light italic font-serif text-white">{editedTitle}</h2>
             </div>
           </div>
           
           <div className="flex items-center gap-2">
+            {letterIsFromCurrentUser && isPersistedLetter && (
+              <>
+                <button
+                  onClick={() => setIsEditingLetter(!isEditingLetter)}
+                  className="p-3 border border-white/10 rounded-xl transition-all bg-white/5 text-white/40 hover:text-white"
+                >
+                  <Edit2 className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={handleDeleteLetter}
+                  className="p-3 border border-white/10 rounded-xl transition-all bg-white/5 text-white/40 hover:text-rose-400"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              </>
+            )}
             <button 
               onClick={toggleFavorite}
               className={cn(
@@ -251,22 +327,47 @@ export default function LetterReader({
                 {salutationLine}
             </motion.h1>
 
-            <div className="markdown-body">
-              {paragraphs.map((para, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ 
-                    duration: 1, 
-                    delay: 0.5 + i * 0.4,
-                    ease: "easeOut"
-                  }}
-                >
-                  <ReactMarkdown>{para}</ReactMarkdown>
-                </motion.div>
-              ))}
-            </div>
+            {isEditingLetter ? (
+              <div className="space-y-4 mb-10">
+                <input
+                  value={editedTitle}
+                  onChange={(e) => setEditedTitle(e.target.value)}
+                  className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-pink-500/40 text-xl font-serif italic"
+                  placeholder="Letter Title"
+                />
+                <textarea
+                  value={editedContent}
+                  onChange={(e) => setEditedContent(e.target.value)}
+                  className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-pink-500/40 resize-none min-h-[300px]"
+                  placeholder="Write your heart out..."
+                />
+                <div className="flex justify-end gap-2">
+                  <button onClick={() => {
+                    setIsEditingLetter(false);
+                    setEditedTitle(letter.title);
+                    setEditedContent(letter.content);
+                  }} className="px-4 py-2 rounded-lg text-white/50 hover:text-white text-sm font-semibold">Cancel</button>
+                  <button onClick={handleSaveLetter} className="px-4 py-2 bg-white text-black rounded-lg hover:bg-neutral-200 text-sm font-semibold">Save Changes</button>
+                </div>
+              </div>
+            ) : (
+              <div className="markdown-body">
+                {paragraphs.map((para, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ 
+                      duration: 1, 
+                      delay: 0.5 + i * 0.4,
+                      ease: "easeOut"
+                    }}
+                  >
+                    <ReactMarkdown>{para}</ReactMarkdown>
+                  </motion.div>
+                ))}
+              </div>
+            )}
 
             <motion.div 
               initial={{ opacity: 0 }}
@@ -319,11 +420,44 @@ export default function LetterReader({
                             <span className="text-[10px] uppercase tracking-widest text-white/40 font-bold">
                               {reply.authorName || "Razia"}
                             </span>
-                            <span className="text-[10px] text-white/30">
-                              {replyDate ? format(replyDate, "MMM d, h:mm a") : "Just now"}
-                            </span>
+                            <div className="flex items-center gap-2 text-[10px] text-white/30">
+                              <span>{replyDate ? format(replyDate, "MMM d, h:mm a") : "Just now"}</span>
+                              {isMine && (
+                                <div className="flex items-center gap-2 ml-2 border-l border-white/10 pl-2">
+                                  {editingReplyId === reply.id ? (
+                                    <>
+                                      <button onClick={() => handleSaveReply(reply.id)} className="hover:text-emerald-400 transition-colors">
+                                        <Check className="w-3 h-3" />
+                                      </button>
+                                      <button onClick={() => setEditingReplyId(null)} className="hover:text-white transition-colors">
+                                        <X className="w-3 h-3" />
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <button onClick={() => handleEditReply(reply)} className="hover:text-white transition-colors">
+                                        <Edit2 className="w-3 h-3" />
+                                      </button>
+                                      <button onClick={() => handleDeleteReply(reply.id)} className="hover:text-rose-400 transition-colors">
+                                        <Trash2 className="w-3 h-3" />
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          <p className="text-sm text-white/80 leading-relaxed whitespace-pre-wrap">{reply.content}</p>
+                          {editingReplyId === reply.id ? (
+                            <textarea
+                              value={editedReplyContent}
+                              onChange={(e) => setEditedReplyContent(e.target.value)}
+                              className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/20 resize-none focus:outline-none focus:border-pink-500/40 mt-2"
+                              rows={2}
+                              autoFocus
+                            />
+                          ) : (
+                            <p className="text-sm text-white/80 leading-relaxed whitespace-pre-wrap">{reply.content}</p>
+                          )}
                         </motion.div>
                       );
                     })}

@@ -21,18 +21,6 @@ export default function AuthScreen() {
     }
   };
 
-  const handleTestLogin = async () => {
-    setLoading(true);
-    setErrorMessage(null);
-    try {
-      await signInAsTest();
-    } catch (error: any) {
-      console.error(error);
-      setErrorMessage(error?.message || "Test sign in failed. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
@@ -63,14 +51,6 @@ export default function AuthScreen() {
             {loading ? "Connecting..." : "Sign in to Enter"}
           </button>
 
-          <button
-            onClick={handleTestLogin}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-3 bg-pink-500/10 border border-pink-500/30 hover:border-pink-500/60 text-pink-400 font-semibold py-4 rounded-xl hover:bg-pink-500/20 transition-all disabled:opacity-50"
-          >
-            <Sparkles className="w-5 h-5" />
-            {loading ? "Connecting..." : "Sign in with Test Account"}
-          </button>
         </div>
 
         {errorMessage && (
