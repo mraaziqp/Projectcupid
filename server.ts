@@ -2,11 +2,33 @@ import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
+import * as admin from "firebase-admin";
+import { Resend } from "resend";
 import dotenv from "dotenv";
+import { createLetterNotificationEmail, createSimpleNotificationEmail } from "./src/lib/emailTemplates";
 
 dotenv.config();
 
-const ai = new GoogleGenAI({ 
+// Initialize Firebase Admin once
+if (admin && admin.apps && !admin.apps.length) {
+  const serviceAccountRaw = process.env.FIREBASE_SERVICE_ACCOUNT;
+  if (!serviceAccountRaw) {
+    console.warn("FIREBASE_SERVICE_ACCOUNT environment variable is not set. FCM notifications will not work.");
+  } else {
+    try {
+      const serviceAccount = JSON.parse(serviceAccountRaw);
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+      });
+    } catch (error) {
+      console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT:", error);
+    }
+  }
+} else if (!admin || !admin.apps) {
+  console.warn("Firebase Admin SDK not properly initialized");
+}
+
+const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY || "",
   httpOptions: {
     headers: {
@@ -24,6 +46,221 @@ async function startServer() {
   // API Routes
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });
+  });
+
+  // FCM Push Notifications (legacy endpoint, kept for compatibility)
+  app.post("/api/notify", async (req, res) => {
+    if (!admin || !admin.apps || !admin.apps.length || !admin.app || !admin.app().messaging) {
+      return res.status(500).json({ error: "Firebase Admin not initialized" });
+    }
+
+    const { token, title, body } = req.body ?? {};
+
+    if (!token || typeof token !== "string") {
+      return res.status(400).json({ error: "Missing FCM token" });
+    }
+    if (!title || !body) {
+      return res.status(400).json({ error: "Missing title or body" });
+    }
+
+    try {
+      await admin.messaging().send({
+        token,
+        notification: { title, body },
+        webpush: {
+          notification: {
+            title,
+            body,
+            icon: "/pwa-192x192.png",
+          },
+          fcmOptions: {
+            link: "/",
+          },
+        },
+      });
+
+      return res.status(200).json({ success: true });
+    } catch (error: any) {
+      console.error("FCM send error:", error);
+      return res.status(500).json({ error: error?.message || "Failed to send notification" });
+    }
+  });
+
+  // Robust Notifications (FCM + Email Fallback)
+  app.post("/api/notify-robust", async (req, res) => {
+    try {
+      const { token, email, title, body, recipientName = "Love" } = req.body ?? {};
+
+      if (!title || !body) {
+        return res.status(400).json({ error: "Missing title or body" });
+      }
+
+      if (!token && !email) {
+        return res.status(400).json({ error: "Missing both FCM token and email" });
+      }
+
+      let fcmSuccess = false;
+      let fcmError: string | null = null;
+      let emailSuccess = false;
+      let emailError: string | null = null;
+
+      // Attempt 1: FCM Push Notification
+      if (token && admin && admin.apps && admin.apps.length > 0) {
+        try {
+          await admin.messaging().send({
+            token,
+            notification: { title, body },
+            webpush: {
+              notification: {
+                title,
+                body,
+                icon: "/pwa-192x192.png",
+              },
+              fcmOptions: {
+                link: "/",
+              },
+            },
+          });
+          fcmSuccess = true;
+          console.log(`✓ FCM notification sent to token: ${token.slice(0, 20)}...`);
+        } catch (error: any) {
+          fcmError = error?.message || "Unknown FCM error";
+          console.warn(`✗ FCM notification failed: ${fcmError}`);
+        }
+      }
+
+      // Attempt 2: Email Fallback via Resend (with timeout)
+      if (email && process.env.RESEND_API_KEY) {
+        try {
+          const resend = new Resend(process.env.RESEND_API_KEY);
+
+          // Sanitize values to prevent injection
+          const safeTitle = String(title).substring(0, 200);
+          const safeBody = String(body).substring(0, 5000);
+          const safeName = String(recipientName).substring(0, 100);
+
+          // Use beautiful email template
+          const htmlBody = createSimpleNotificationEmail(
+            safeTitle,
+            safeBody,
+            safeName,
+            "Beloved"
+          );
+
+          const response = await resend.emails.send({
+            from: process.env.RESEND_FROM_EMAIL || "cupid@resend.dev",
+            to: email,
+            subject: `💝 ${safeTitle}`,
+            html: htmlBody,
+          });
+
+          if (response.data?.id) {
+            emailSuccess = true;
+            console.log(`✓ Email notification sent to: ${email}`);
+          } else {
+            emailError = "Resend returned no email ID";
+            console.warn(`✗ Email notification failed: ${emailError}`);
+          }
+        } catch (error: any) {
+          emailError = error?.message || "Unknown email error";
+          console.warn(`✗ Email notification failed: ${emailError}`);
+        }
+      }
+
+      // Return success if either channel succeeded
+      const success = fcmSuccess || emailSuccess;
+
+      if (success) {
+        return res.status(200).json({
+          success: true,
+          fcm: { success: fcmSuccess, error: fcmError },
+          email: { success: emailSuccess, error: emailError },
+          message: `Notification delivered via ${fcmSuccess && emailSuccess ? "FCM and email" : fcmSuccess ? "FCM" : "email"}`
+        });
+      }
+
+      // If both failed, still return 200 but indicate both failed (Firestore has it backed up)
+      return res.status(200).json({
+        success: false,
+        fcm: { success: fcmSuccess, error: fcmError },
+        email: { success: emailSuccess, error: emailError },
+        message: "Notification stored in Firestore but delivery channels unavailable",
+        note: "Notification will appear in-app when recipient opens the app"
+      });
+    } catch (error: any) {
+      console.error("Notification endpoint error:", error);
+      return res.status(500).json({
+        error: "Internal server error",
+        message: error?.message || "Unknown error"
+      });
+    }
+  });
+
+  // Beautiful Letter Email Notification
+  app.post("/api/notify-letter", async (req, res) => {
+    try {
+      const { email, letterTitle, letterContent, senderName, recipientName = "Beloved" } = req.body ?? {};
+
+      if (!email || !letterTitle || !letterContent) {
+        return res.status(400).json({ error: "Missing required fields: email, letterTitle, letterContent" });
+      }
+
+      if (!process.env.RESEND_API_KEY) {
+        return res.status(500).json({ error: "Resend API key not configured" });
+      }
+
+      try {
+        const resend = new Resend(process.env.RESEND_API_KEY);
+
+        // Sanitize content
+        const safeTitle = String(letterTitle).substring(0, 200);
+        const safeContent = String(letterContent).substring(0, 10000);
+        const safeSenderName = String(senderName).substring(0, 100);
+        const safeRecipientName = String(recipientName).substring(0, 100);
+
+        // Create beautiful letter email
+        const htmlBody = createLetterNotificationEmail(
+          safeTitle,
+          safeContent,
+          safeSenderName,
+          safeRecipientName
+        );
+
+        const response = await resend.emails.send({
+          from: process.env.RESEND_FROM_EMAIL || "cupid@resend.dev",
+          to: email,
+          subject: `💝 ${safeTitle} - A letter from ${safeSenderName}`,
+          html: htmlBody,
+        });
+
+        if (response.data?.id) {
+          console.log(`✓ Beautiful letter email sent to: ${email}`);
+          return res.status(200).json({
+            success: true,
+            message: "Letter email sent successfully",
+            emailId: response.data.id,
+          });
+        } else {
+          console.warn(`✗ Letter email failed: No email ID returned`);
+          return res.status(500).json({
+            success: false,
+            error: "Failed to send letter email",
+          });
+        }
+      } catch (error: any) {
+        console.error(`✗ Letter email error:`, error?.message);
+        return res.status(500).json({
+          success: false,
+          error: error?.message || "Failed to send letter email",
+        });
+      }
+    } catch (error: any) {
+      console.error("Letter notification endpoint error:", error);
+      return res.status(500).json({
+        error: "Internal server error",
+        message: error?.message,
+      });
+    }
   });
 
   // Proxy Gemini API for letter generation

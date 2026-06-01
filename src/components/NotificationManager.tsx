@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { doc, updateDoc, collection, query, where, onSnapshot } from "firebase/firestore";
-import { db, requestNotificationPermission, initMessaging } from "../lib/firebase";
+import { db, requestNotificationPermission } from "../lib/firebase";
 import { UserProfile } from "../hooks/useAuth";
 
 export default function NotificationManager({ profile }: { profile: UserProfile | null }) {

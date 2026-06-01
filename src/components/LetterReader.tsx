@@ -62,7 +62,7 @@ export default function LetterReader({
   const date = letter.publishDate?.toDate ? letter.publishDate.toDate() : new Date();
   const isPersistedLetter = letter.id !== "preview" && !letter.id.startsWith("vault-");
   const letterIsFromCurrentUser = Boolean(currentUserId && letter.authorId === currentUserId);
-  const salutationLine = letterIsFromCurrentUser ? "A note from your heart," : "To my dearest Razia,";
+  const salutationLine = letterIsFromCurrentUser ? "A note from your heart," : `To my dearest ${currentUserName || "Love"},`;
 
   useEffect(() => {
     if (!isPersistedLetter) {
@@ -102,7 +102,7 @@ export default function LetterReader({
 
       await notifyPartner(
         currentUserId,
-        "Razia replied to your letter",
+        `${currentUserName || "Your love"} replied to your letter`,
         `Reply on: ${letter.title}`
       );
 

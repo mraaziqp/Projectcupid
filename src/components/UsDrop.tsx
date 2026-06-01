@@ -6,6 +6,7 @@ import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 import { collection, query, orderBy, limit, onSnapshot, addDoc, Timestamp, deleteDoc, doc } from "firebase/firestore";
 import { format } from "date-fns";
 import { cn } from "../lib/utils";
+import { notifyPartner } from "../lib/notifications";
 
 interface Drop {
   id: string;
@@ -47,6 +48,12 @@ export default function UsDrop({ userId }: { userId: string }) {
         category,
         createdAt: Timestamp.now()
       });
+
+      const preview = content.substring(0, 60) + (content.length > 60 ? "..." : "");
+      notifyPartner(userId, "New Memory Drop 💫", `${category}: ${preview}`).catch((err) => {
+        console.error("Failed to notify partner of new drop:", err);
+      });
+
       setContent("");
     } catch (e) {
       handleFirestoreError(e, OperationType.WRITE, "us_drops");

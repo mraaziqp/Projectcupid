@@ -4,6 +4,7 @@ import { Moon, Sparkles, Heart, Activity, Info, Calendar, ChevronRight, Utensils
 import GlassPanel from "./GlassPanel";
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 import { collection, query, where, orderBy, limit, onSnapshot, addDoc, Timestamp, updateDoc, doc } from "firebase/firestore";
+import { notifyPartner } from "../lib/notifications";
 import { differenceInDays, format, startOfDay, addDays as addDaysFn, addMonths } from "date-fns";
 import { cn } from "../lib/utils";
 
@@ -123,15 +124,8 @@ export default function LunarCycle({ userId, isAdmin }: { userId: string; isAdmi
   const fulfillQuest = async (id: string, questUserId: string, cravingName: string) => {
     try {
       await updateDoc(doc(db, "care_quests", id), { status: "fulfilled" });
-      
-      // Notify Razia that her quest was fulfilled
-      await addDoc(collection(db, "notifications"), {
-        userId: questUserId, // The person who requested the craving
-        title: "Side Quest Fulfilled! 💓",
-        body: `Mohammed has procured: ${cravingName}`,
-        read: false,
-        createdAt: Timestamp.now()
-      });
+
+      await notifyPartner(userId, "Side Quest Fulfilled! 💓", `Mohammed has procured: ${cravingName}`);
     } catch (e) {
       handleFirestoreError(e, OperationType.WRITE, "care_quests");
     }

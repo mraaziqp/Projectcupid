@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState, useEffect } from "react";
-import { collection, query, where, orderBy, onSnapshot, addDoc, Timestamp } from "firebase/firestore";
+import { collection, query, where, orderBy, onSnapshot, addDoc, Timestamp, getDocs } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 import LetterCard from "./LetterCard";
 import { AnimatePresence, motion } from "motion/react";
@@ -63,7 +63,7 @@ export default function Dashboard({ user, profile }: { user: User; profile: User
     if (!trimmedContent) return;
 
     const trimmedTitle = letterTitle.trim();
-    const finalTitle = trimmedTitle || `A note from ${profile?.displayName?.split(" ")[0] || "Razia"}`;
+    const finalTitle = trimmedTitle || `A note from ${profile?.displayName?.split(" ")[0] || "My love"}`;
 
     setSendingLetter(true);
     setSendState(null);
@@ -81,14 +81,39 @@ export default function Dashboard({ user, profile }: { user: User; profile: User
         createdAt: Timestamp.now(),
       });
 
-      // Keep the letter write independent from notification delivery.
-      notifyPartner(user.uid, "Razia sent you a letter", finalTitle).catch((notifyError) => {
+      // Send beautiful email and push notifications
+      const senderName = user.email === "mraaziqp@gmail.com" ? "Your Husband" : "Your Wife";
+
+      // Hardcoded emails
+      const partnerEmail = user.email === "mraaziqp@gmail.com"
+        ? "raziashade4@gmail.com"
+        : "mraaziqp@gmail.com";
+
+      const partnerName = user.email === "mraaziqp@gmail.com"
+        ? "Razia"
+        : "Mohammed";
+
+      // Send beautiful letter email
+      fetch("/api/notify-letter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: partnerEmail,
+          letterTitle: finalTitle,
+          letterContent: trimmedContent,
+          senderName: senderName,
+          recipientName: partnerName,
+        }),
+      }).catch((err) => console.error("Letter email failed:", err));
+
+      // Also send push notification
+      notifyPartner(user.uid, `${senderName} sent you a letter`, finalTitle, senderName).catch((notifyError) => {
         console.error("Partner notification failed after sending letter:", notifyError);
       });
 
       setLetterTitle("");
       setLetterContent("");
-      setSendState({ type: "success", message: "Letter sent successfully." });
+      setSendState({ type: "success", message: "Letter sent successfully. She's being notified now! 💕" });
     } catch (error) {
       try {
         handleFirestoreError(error, OperationType.CREATE, "letters");
@@ -267,7 +292,7 @@ export default function Dashboard({ user, profile }: { user: User; profile: User
           <GlassPanel className="p-6 space-y-4">
             <div className="space-y-1">
               <h3 className="text-xs font-bold uppercase tracking-widest text-white/50">Write Back</h3>
-              <p className="text-xs text-white/40">Send Razia-to-Mohammed letters from your side too.</p>
+              <p className="text-xs text-white/40">Send a letter back to your love.</p>
             </div>
 
             <input
