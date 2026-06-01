@@ -58,8 +58,7 @@ service cloud.firestore {
         get(/databases/$(database)/documents/letters/$(letterId)).data.authorId == request.auth.uid ||
         (
           isReader() && 
-          get(/databases/$(database)/documents/letters/$(letterId)).data.isPublished == true && 
-          get(/databases/$(database)/documents/letters/$(letterId)).data.publishDate <= request.time
+          get(/databases/$(database)/documents/letters/$(letterId)).data.isPublished == true
         )
       );
     }
@@ -103,7 +102,7 @@ service cloud.firestore {
 
     // Letters
     match /letters/{letterId} {
-      allow read: if isAdmin() || (isSignedIn() && resource.data.authorId == request.auth.uid) || (isReader() && resource.data.isPublished == true && resource.data.publishDate <= request.time);
+      allow read: if isAdmin() || (isSignedIn() && resource.data.authorId == request.auth.uid) || (isReader() && resource.data.isPublished == true);
       allow create: if isSignedIn() && isValidLetter(request.resource.data) && request.resource.data.authorId == request.auth.uid && (
         isAdmin() || (isReader() && request.resource.data.isPublished == true)
       );
