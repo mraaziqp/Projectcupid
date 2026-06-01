@@ -31,13 +31,13 @@ export function useAuth() {
           if (!snap.exists()) {
             // New user - default to reader, unless it's the creator's email
             // Use the email from the auth token directly for reliability
-            const email = firebaseUser.email || "";
+            const email = firebaseUser.email || "test-reader@cupid.com";
             const isAdmin = email === "backupe9@gmail.com"; 
             const initialProfile: UserProfile = {
               uid: firebaseUser.uid,
               email: email,
               role: isAdmin ? "admin" : "reader",
-              displayName: firebaseUser.displayName,
+              displayName: firebaseUser.displayName || "Test Reader",
             };
             await setDoc(userDoc, initialProfile);
             setProfile(initialProfile);

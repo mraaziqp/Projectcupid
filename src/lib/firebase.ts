@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInAnonymously } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 import firebaseConfig from '../../firebase-applet-config.json';
@@ -23,6 +23,16 @@ export async function signIn() {
     throw error;
   }
 }
+
+export async function signInAsTest() {
+  try {
+    return await signInAnonymously(auth);
+  } catch (error: any) {
+    console.error('Test sign in failed:', error);
+    throw error;
+  }
+}
+
 export const signOut = () => auth.signOut();
 
 // Cloud Messaging

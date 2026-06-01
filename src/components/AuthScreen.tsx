@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Heart, LogIn } from "lucide-react";
-import { signIn } from "../lib/firebase";
+import { Heart, LogIn, Sparkles } from "lucide-react";
+import { signIn, signInAsTest } from "../lib/firebase";
 import GlassPanel from "./GlassPanel";
 import { motion } from "motion/react";
 
@@ -16,6 +16,19 @@ export default function AuthScreen() {
     } catch (error: any) {
       console.error(error);
       setErrorMessage(error?.message || "Sign in failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTestLogin = async () => {
+    setLoading(true);
+    setErrorMessage(null);
+    try {
+      await signInAsTest();
+    } catch (error: any) {
+      console.error(error);
+      setErrorMessage(error?.message || "Test sign in failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -40,14 +53,25 @@ export default function AuthScreen() {
           </p>
         </div>
 
-        <button
-          onClick={handleLogin}
-          disabled={loading}
-          className="w-full flex items-center justify-center gap-3 bg-white text-black font-semibold py-4 rounded-xl hover:bg-neutral-200 transition-colors disabled:opacity-50"
-        >
-          <LogIn className="w-5 h-5" />
-          {loading ? "Connecting..." : "Sign in to Enter"}
-        </button>
+        <div className="space-y-3">
+          <button
+            onClick={handleLogin}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-3 bg-white text-black font-semibold py-4 rounded-xl hover:bg-neutral-200 transition-colors disabled:opacity-50"
+          >
+            <LogIn className="w-5 h-5" />
+            {loading ? "Connecting..." : "Sign in to Enter"}
+          </button>
+
+          <button
+            onClick={handleTestLogin}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-3 bg-pink-500/10 border border-pink-500/30 hover:border-pink-500/60 text-pink-400 font-semibold py-4 rounded-xl hover:bg-pink-500/20 transition-all disabled:opacity-50"
+          >
+            <Sparkles className="w-5 h-5" />
+            {loading ? "Connecting..." : "Sign in with Test Account"}
+          </button>
+        </div>
 
         {errorMessage && (
           <p className="text-sm text-rose-300 bg-rose-950/40 border border-rose-500/30 rounded-lg p-3">

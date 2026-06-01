@@ -17,11 +17,15 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && getUserData().role == 'admin';
+      return isSignedIn() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+             getUserData().role == 'admin';
     }
 
     function isReader() {
-      return isSignedIn() && getUserData().role == 'reader';
+      return isSignedIn() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+             getUserData().role == 'reader';
     }
 
     function isOwner(userId) {
@@ -49,8 +53,15 @@ service cloud.firestore {
     }
 
     function canReadLetter(letterId) {
-      let letter = get(/databases/$(database)/documents/letters/$(letterId)).data;
-      return isAdmin() || (isReader() && letter.isPublished == true && letter.publishDate <= request.time);
+      return exists(/databases/$(database)/documents/letters/$(letterId)) && (
+        isAdmin() || 
+        get(/databases/$(database)/documents/letters/$(letterId)).data.authorId == request.auth.uid ||
+        (
+          isReader() && 
+          get(/databases/$(database)/documents/letters/$(letterId)).data.isPublished == true && 
+          get(/databases/$(database)/documents/letters/$(letterId)).data.publishDate <= request.time
+        )
+      );
     }
 
     function isValidCycle(data) {
@@ -92,7 +103,7 @@ service cloud.firestore {
 
     // Letters
     match /letters/{letterId} {
-      allow read: if isAdmin() || (isReader() && resource.data.isPublished == true && resource.data.publishDate <= request.time);
+      allow read: if isAdmin() || (isSignedIn() && resource.data.authorId == request.auth.uid) || (isReader() && resource.data.isPublished == true && resource.data.publishDate <= request.time);
       allow create: if isSignedIn() && isValidLetter(request.resource.data) && request.resource.data.authorId == request.auth.uid && (
         isAdmin() || (isReader() && request.resource.data.isPublished == true)
       );
