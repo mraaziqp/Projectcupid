@@ -92,10 +92,13 @@ export default function AdminDashboard({ user, profile }: { user: User; profile:
 
       // Keep notification failures non-blocking so successful edits still complete.
       try {
+        const isMohammed = user.email === "mraaziqp@gmail.com" || user.email === "backupe9@gmail.com";
+        const senderName = isMohammed ? "Your Husband" : "Your Wife";
         await notifyPartner(
           user.uid,
           "A letter was updated.",
-          `A revised letter is waiting: ${editTitle.trim()}`
+          `A revised letter is waiting: ${editTitle.trim()}`,
+          senderName
         );
       } catch (notifyError) {
         console.error("Failed to notify partner after edit:", notifyError);

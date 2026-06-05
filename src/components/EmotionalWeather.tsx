@@ -107,10 +107,13 @@ export default function EmotionalWeather({ userId, userEmail }: { userId: string
 
       const bidSuffix = connectionBid ? ` • Bid: ${connectionBid}` : "";
       const noteSuffix = note.trim() ? ` • Note: ${note.trim()}` : "";
+      const isMohammed = userEmail === "mraaziqp@gmail.com" || userEmail === "backupe9@gmail.com";
+      const senderName = isMohammed ? "Your Husband" : "Your Wife";
       await notifyPartner(
         userId,
         "Emotional weather updated",
-        `Status: ${emotion} • Social battery: ${socialBattery}%${bidSuffix}${noteSuffix}`
+        `Status: ${emotion} • Social battery: ${socialBattery}%${bidSuffix}${noteSuffix}`,
+        senderName
       );
     } catch (e) {
       handleFirestoreError(e, OperationType.WRITE, "weather");

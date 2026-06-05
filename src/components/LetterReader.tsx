@@ -103,7 +103,7 @@ export default function LetterReader({
       await notifyPartner(
         currentUserId,
         `${currentUserName || "Your love"} replied to your letter`,
-        `Reply on: ${letter.title}`
+        replyText.trim()
       );
 
       setReplyText("");
