@@ -1,24 +1,36 @@
-import * as admin from "firebase-admin";
 import { Resend } from "resend";
 
-// Initialize Firebase Admin once
-if (!admin.apps.length) {
-  const serviceAccountRaw = process.env.FIREBASE_SERVICE_ACCOUNT;
-  if (!serviceAccountRaw) {
-    console.warn("FIREBASE_SERVICE_ACCOUNT not set. FCM notifications disabled.");
-  } else {
-    try {
-      const serviceAccount = JSON.parse(serviceAccountRaw);
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-      });
-    } catch (error) {
-      console.error("Failed to initialize Firebase Admin:", error);
-    }
-  }
-}
+let adminModule: any = null;
+let firebaseAdminInitialized = false;
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+async function getAdmin() {
+  if (adminModule) return adminModule;
+  try {
+    // Dynamically import to prevent bundler/import failures at startup
+    adminModule = await import("firebase-admin");
+    if (adminModule && !adminModule.apps.length) {
+      const serviceAccountRaw = process.env.FIREBASE_SERVICE_ACCOUNT;
+      if (serviceAccountRaw) {
+        try {
+          const serviceAccount = JSON.parse(serviceAccountRaw);
+          adminModule.initializeApp({
+            credential: adminModule.credential.cert(serviceAccount),
+          });
+          firebaseAdminInitialized = true;
+        } catch (error) {
+          console.error("Failed to initialize Firebase Admin:", error);
+        }
+      } else {
+        console.warn("FIREBASE_SERVICE_ACCOUNT not set. FCM notifications disabled.");
+      }
+    } else if (adminModule && adminModule.apps.length > 0) {
+      firebaseAdminInitialized = true;
+    }
+  } catch (err) {
+    console.warn("firebase-admin module failed to load:", err);
+  }
+  return adminModule;
+}
 
 interface NotifyRequest {
   token?: string;
@@ -47,6 +59,8 @@ export default async function handler(req: any, res: any) {
     return res.status(400).json({ error: "Missing title or body" });
   }
 
+  const resend = new Resend(process.env.RESEND_API_KEY);
+
   if (!token && !email) {
     return res.status(400).json({ error: "Missing both FCM token and email" });
   }
@@ -56,8 +70,10 @@ export default async function handler(req: any, res: any) {
   let emailSuccess = false;
   let emailError: string | null = null;
 
+  const admin = await getAdmin();
+
   // Attempt 1: FCM Push Notification
-  if (token && admin.apps.length > 0) {
+  if (token && admin && firebaseAdminInitialized) {
     try {
       await admin.messaging().send({
         token,
@@ -102,7 +118,7 @@ export default async function handler(req: any, res: any) {
       `;
 
       const response = await resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL || "Project Cupid <onboarding@resend.dev>",
+        from: process.env.RESEND_FROM_EMAIL || "Project Cupid <cupid@verifiedbizlink.co.za>",
         to: email,
         subject: `💝 ${title}`,
         html: htmlBody,

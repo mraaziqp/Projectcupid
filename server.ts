@@ -148,7 +148,7 @@ async function startServer() {
           );
 
           const response = await resend.emails.send({
-            from: process.env.RESEND_FROM_EMAIL || "Project Cupid <onboarding@resend.dev>",
+            from: process.env.RESEND_FROM_EMAIL || "Project Cupid <cupid@verifiedbizlink.co.za>",
             to: email,
             subject: `💝 ${safeTitle}`,
             html: htmlBody,
@@ -227,7 +227,7 @@ async function startServer() {
         );
 
         const response = await resend.emails.send({
-          from: process.env.RESEND_FROM_EMAIL || "Project Cupid <onboarding@resend.dev>",
+          from: process.env.RESEND_FROM_EMAIL || "Project Cupid <cupid@verifiedbizlink.co.za>",
           to: email,
           subject: `💝 ${safeTitle} - A letter from ${safeSenderName}`,
           html: htmlBody,
