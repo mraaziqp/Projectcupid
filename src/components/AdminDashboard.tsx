@@ -215,7 +215,7 @@ export default function AdminDashboard({ user, profile }: { user: User; profile:
 
       {view === "write" ? (
         <Suspense fallback={<div className="py-20 text-center text-white/30">Loading editor...</div>}>
-          <AdminEditor userId={user.uid} onPublished={() => setView("list")} />
+          <AdminEditor userId={user.uid} userEmail={user.email || ""} onPublished={() => setView("list")} />
         </Suspense>
       ) : view === "list" ? (
         <div className="space-y-6">

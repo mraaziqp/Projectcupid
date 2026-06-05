@@ -102,7 +102,7 @@ export default async function handler(req: any, res: any) {
       `;
 
       const response = await resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL || "cupid@resend.dev",
+        from: process.env.RESEND_FROM_EMAIL || "Project Cupid <onboarding@resend.dev>",
         to: email,
         subject: `💝 ${title}`,
         html: htmlBody,

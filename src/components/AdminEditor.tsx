@@ -10,7 +10,15 @@ import { cn } from "../lib/utils";
 import { generateOllamaDraft } from "../lib/ollama";
 import { notifyPartner } from "../lib/notifications";
 
-export default function AdminEditor({ userId, onPublished }: { userId: string; onPublished?: () => void }) {
+export default function AdminEditor({ 
+  userId, 
+  userEmail, 
+  onPublished 
+}: { 
+  userId: string; 
+  userEmail: string; 
+  onPublished?: () => void 
+}) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [publishDate, setPublishDate] = useState(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
@@ -42,8 +50,27 @@ export default function AdminEditor({ userId, onPublished }: { userId: string; o
         createdAt: Timestamp.now(),
       });
 
-      // Keep publishing responsive even if the notification path has a transient failure.
-      notifyPartner(userId, "A new aurora is glowing.", "Your daily letter is waiting.").catch((notifyError) => {
+      // Send beautiful email and push notifications
+      const isMohammed = userEmail === "mraaziqp@gmail.com" || userEmail === "backupe9@gmail.com";
+      const senderName = isMohammed ? "Your Husband" : "Your Wife";
+      const partnerEmail = isMohammed ? "raziashade4@gmail.com" : "mraaziqp@gmail.com";
+      const partnerName = isMohammed ? "Razia" : "Mohammed";
+
+      // Send beautiful letter email
+      fetch("/api/notify-letter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: partnerEmail,
+          letterTitle: title,
+          letterContent: content,
+          senderName: senderName,
+          recipientName: partnerName,
+        }),
+      }).catch((err) => console.error("Letter email failed:", err));
+
+      // Also send push notification
+      notifyPartner(userId, `${senderName} sent you a letter`, title, senderName).catch((notifyError) => {
         console.error("Partner notification failed after publishing letter:", notifyError);
       });
 
