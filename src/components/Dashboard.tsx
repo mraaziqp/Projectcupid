@@ -5,16 +5,16 @@ import LetterCard from "./LetterCard";
 import { AnimatePresence, motion } from "motion/react";
 import { BookHeart, Package, Heart, Share2, Send } from "lucide-react";
 import GlassPanel from "./GlassPanel";
-import { cn } from "../lib/utils";
+import { cn, lazyWithRetry } from "../lib/utils";
 import { User } from "firebase/auth";
 import { UserProfile } from "../hooks/useAuth";
 import { notifyPartner } from "../lib/notifications";
 
-const LetterReader = lazy(() => import("./LetterReader"));
-const Vault = lazy(() => import("./Vault"));
-const LunarCycle = lazy(() => import("./LunarCycle"));
-const EmotionalWeather = lazy(() => import("./EmotionalWeather"));
-const UsDrop = lazy(() => import("./UsDrop"));
+const LetterReader = lazyWithRetry(() => import("./LetterReader"));
+const Vault = lazyWithRetry(() => import("./Vault"));
+const LunarCycle = lazyWithRetry(() => import("./LunarCycle"));
+const EmotionalWeather = lazyWithRetry(() => import("./EmotionalWeather"));
+const UsDrop = lazyWithRetry(() => import("./UsDrop"));
 
 interface Letter {
   id: string;

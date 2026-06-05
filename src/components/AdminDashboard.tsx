@@ -7,15 +7,15 @@ import { format } from "date-fns";
 import { User } from "firebase/auth";
 import { UserProfile } from "../hooks/useAuth";
 import { AnimatePresence } from "motion/react";
-import { cn } from "../lib/utils";
+import { cn, lazyWithRetry } from "../lib/utils";
 import { notifyPartner } from "../lib/notifications";
 
-const LunarCycle = lazy(() => import("./LunarCycle"));
-const EmotionalWeather = lazy(() => import("./EmotionalWeather"));
-const UsDrop = lazy(() => import("./UsDrop"));
-const AdminEditor = lazy(() => import("./AdminEditor"));
-const LetterReader = lazy(() => import("./LetterReader"));
-const Vault = lazy(() => import("./Vault"));
+const LunarCycle = lazyWithRetry(() => import("./LunarCycle"));
+const EmotionalWeather = lazyWithRetry(() => import("./EmotionalWeather"));
+const UsDrop = lazyWithRetry(() => import("./UsDrop"));
+const AdminEditor = lazyWithRetry(() => import("./AdminEditor"));
+const LetterReader = lazyWithRetry(() => import("./LetterReader"));
+const Vault = lazyWithRetry(() => import("./Vault"));
 
 interface LetterRecord {
   id: string;

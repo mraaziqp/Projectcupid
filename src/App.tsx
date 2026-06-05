@@ -8,13 +8,14 @@ import { useAuth } from "./hooks/useAuth";
 import Background from "./components/Background";
 import { LogOut, Heart } from "lucide-react";
 import { auth } from "./lib/firebase";
+import { lazyWithRetry } from "./lib/utils";
 
-const AuthScreen = lazy(() => import("./components/AuthScreen"));
-const Dashboard = lazy(() => import("./components/Dashboard"));
-const AdminDashboard = lazy(() => import("./components/AdminDashboard"));
-const PasswordGate = lazy(() => import("./components/PasswordGate"));
-const InstallPrompt = lazy(() => import("./components/InstallPrompt"));
-const NotificationManager = lazy(() => import("./components/NotificationManager"));
+const AuthScreen = lazyWithRetry(() => import("./components/AuthScreen"));
+const Dashboard = lazyWithRetry(() => import("./components/Dashboard"));
+const AdminDashboard = lazyWithRetry(() => import("./components/AdminDashboard"));
+const PasswordGate = lazyWithRetry(() => import("./components/PasswordGate"));
+const InstallPrompt = lazyWithRetry(() => import("./components/InstallPrompt"));
+const NotificationManager = lazyWithRetry(() => import("./components/NotificationManager"));
 
 export default function App() {
   const { user, profile, loading } = useAuth();
