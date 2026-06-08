@@ -15,6 +15,7 @@ const Vault = lazyWithRetry(() => import("./Vault"));
 const LunarCycle = lazyWithRetry(() => import("./LunarCycle"));
 const EmotionalWeather = lazyWithRetry(() => import("./EmotionalWeather"));
 const UsDrop = lazyWithRetry(() => import("./UsDrop"));
+const LoveNudges = lazyWithRetry(() => import("./LoveNudges"));
 
 interface Letter {
   id: string;
@@ -82,16 +83,12 @@ export default function Dashboard({ user, profile }: { user: User; profile: User
       });
 
       // Send beautiful email and push notifications
-      const senderName = user.email === "mraaziqp@gmail.com" ? "Your Husband" : "Your Wife";
+      const isMohammed = user.email === "mraaziqp@gmail.com" || user.email === "backupe9@gmail.com";
+      const senderName = isMohammed ? "Your Husband" : "Your Wife";
 
       // Hardcoded emails
-      const partnerEmail = user.email === "mraaziqp@gmail.com"
-        ? "raziashade4@gmail.com"
-        : "mraaziqp@gmail.com";
-
-      const partnerName = user.email === "mraaziqp@gmail.com"
-        ? "Razia"
-        : "Mohammed";
+      const partnerEmail = isMohammed ? "raziashade4@gmail.com" : "mraaziqp@gmail.com";
+      const partnerName = isMohammed ? "Razia" : "Mohammed";
 
       // Send beautiful letter email
       fetch("/api/notify-letter", {
@@ -207,7 +204,8 @@ export default function Dashboard({ user, profile }: { user: User; profile: User
                 className="space-y-12"
               >
                 <Suspense fallback={<div className="py-20 text-center text-white/30">Loading connection features...</div>}>
-                  <LunarCycle userId={user.uid} isAdmin={false} />
+                  <LoveNudges userId={user.uid} userEmail={user.email || ""} />
+                  <LunarCycle userId={user.uid} userEmail={user.email || ""} isAdmin={false} />
                   <EmotionalWeather userId={user.uid} userEmail={user.email || ""} />
                   <UsDrop userId={user.uid} />
                 </Suspense>

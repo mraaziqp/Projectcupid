@@ -1,8 +1,47 @@
 import { motion } from "motion/react";
+import { useMemo } from "react";
 
 export default function Background() {
+  const stars = useMemo(() => {
+    return Array.from({ length: 60 }, (_, i) => ({
+      id: i,
+      top: `${Math.random() * 100}%`,
+      left: `${Math.random() * 100}%`,
+      size: Math.random() * 2.5 + 1,
+      duration: Math.random() * 4 + 3,
+      delay: Math.random() * 5,
+    }));
+  }, []);
+
   return (
     <div className="fixed inset-0 -z-10 bg-neutral-950 overflow-hidden">
+      {/* Twinkling Star Field */}
+      <div className="absolute inset-0 pointer-events-none opacity-40">
+        {stars.map((star) => (
+          <motion.div
+            key={star.id}
+            initial={{ opacity: 0.1, scale: 0.8 }}
+            animate={{
+              opacity: [0.1, 0.9, 0.1],
+              scale: [0.8, 1.2, 0.8],
+            }}
+            transition={{
+              duration: star.duration,
+              repeat: Infinity,
+              delay: star.delay,
+              ease: "easeInOut",
+            }}
+            className="absolute rounded-full bg-white shadow-[0_0_4px_rgba(255,255,255,0.8)]"
+            style={{
+              top: star.top,
+              left: star.left,
+              width: star.size,
+              height: star.size,
+            }}
+          />
+        ))}
+      </div>
+
       {/* Primary Aurora Blob */}
       <motion.div
         animate={{
@@ -49,3 +88,4 @@ export default function Background() {
     </div>
   );
 }
+

@@ -5,7 +5,7 @@ import { GoogleGenAI } from "@google/genai";
 import * as admin from "firebase-admin";
 import { Resend } from "resend";
 import dotenv from "dotenv";
-import { createLetterNotificationEmail, createSimpleNotificationEmail } from "./src/lib/emailTemplates";
+import { createLetterNotificationEmail, createSimpleNotificationEmail, createCuteNotificationEmail } from "./src/lib/emailTemplates";
 
 dotenv.config();
 
@@ -89,7 +89,7 @@ async function startServer() {
   // Robust Notifications (FCM + Email Fallback)
   app.post("/api/notify-robust", async (req, res) => {
     try {
-      const { token, email, title, body, recipientName = "Love" } = req.body ?? {};
+      const { token, email, title, body, recipientName = "Love", senderName = "Your Partner", theme = "general" } = req.body ?? {};
 
       if (!title || !body) {
         return res.status(400).json({ error: "Missing title or body" });
@@ -138,13 +138,15 @@ async function startServer() {
           const safeTitle = String(title).substring(0, 200);
           const safeBody = String(body).substring(0, 5000);
           const safeName = String(recipientName).substring(0, 100);
+          const safeSender = String(senderName).substring(0, 100);
 
           // Use beautiful email template
-          const htmlBody = createSimpleNotificationEmail(
+          const htmlBody = createCuteNotificationEmail(
             safeTitle,
             safeBody,
+            safeSender,
             safeName,
-            "Beloved"
+            theme
           );
 
           const response = await resend.emails.send({

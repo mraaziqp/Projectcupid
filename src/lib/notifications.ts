@@ -17,9 +17,11 @@ export async function notifyPartner(
   currentUserId: string,
   title: string,
   body: string,
-  senderName?: string
+  senderName?: string,
+  theme?: "nudge" | "feeling" | "general"
 ): Promise<void> {
   const usersSnap = await getDocs(collection(db, "users"));
+  const meDoc = usersSnap.docs.find((u) => u.id === currentUserId);
   const partnerDoc = usersSnap.docs.find((u) => u.id !== currentUserId);
   if (!partnerDoc) return;
 
@@ -27,12 +29,20 @@ export async function notifyPartner(
   const partnerData = partnerDoc.data();
   const partnerFcmToken: string | undefined = partnerData?.fcmToken;
 
-  // Hardcoded emails
-  const currentUserEmail = partnerData?.email === "raziashade4@gmail.com"
-    ? "mraaziqp@gmail.com"
-    : "raziashade4@gmail.com";
-  const partnerEmail = partnerData?.email || currentUserEmail;
-  const partnerName = currentUserEmail === "mraaziqp@gmail.com" ? "Razia" : "Mohammed";
+  const myData = meDoc?.data();
+  const myEmail = myData?.email || "";
+
+  // Determine partner email and name explicitly
+  // Hardwired connection: if current user is Mohammed, partner is Razia (and vice versa)
+  const isMeMohammed = 
+    myEmail.toLowerCase() === "mraaziqp@gmail.com" || 
+    myEmail.toLowerCase() === "backupe9@gmail.com" ||
+    currentUserId === "mraaziqp" || 
+    senderName === "Your Husband";
+
+  const partnerEmail = isMeMohammed ? "raziashade4@gmail.com" : "mraaziqp@gmail.com";
+  const partnerName = isMeMohammed ? "Razia" : "Mohammed";
+  const actualSenderName = senderName || (isMeMohammed ? "Your Husband" : "Your Wife");
 
   // Always write to Firestore so the in-app listener picks it up too
   await addDoc(collection(db, "notifications"), {
@@ -40,7 +50,7 @@ export async function notifyPartner(
     title,
     body,
     read: false,
-    sentBy: senderName || "Your love",
+    sentBy: actualSenderName,
     createdAt: Timestamp.now()
   });
 
@@ -55,12 +65,14 @@ export async function notifyPartner(
           email: partnerEmail,
           title,
           body,
-          recipientName: partnerName?.split(" ")[0] || "Love"
+          recipientName: partnerName,
+          senderName: actualSenderName,
+          theme: theme || "general"
         }),
       });
     } catch (err) {
       console.error("Notification delivery failed:", err);
-      // Even if delivery fails, Firestore notification was stored above
+      // Even if HTTP delivery fails, Firestore notification is stored
     }
   }
 }

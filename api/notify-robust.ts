@@ -38,6 +38,75 @@ interface NotifyRequest {
   title: string;
   body: string;
   recipientName?: string;
+  senderName?: string;
+  theme?: "nudge" | "feeling" | "general";
+}
+
+function createCuteNotificationEmail(
+  title: string,
+  body: string,
+  senderName: string,
+  recipientName: string,
+  theme: "nudge" | "feeling" | "general" = "general"
+): string {
+  const gradient = theme === "nudge"
+    ? "linear-gradient(135deg, #f472b6 0%, #db2777 100%)"
+    : theme === "feeling"
+    ? "linear-gradient(135deg, #c084fc 0%, #7e22ce 100%)"
+    : "linear-gradient(135deg, #f43f5e 0%, #be123c 100%)";
+
+  const icon = theme === "nudge" ? "🧸" : theme === "feeling" ? "✨" : "💝";
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; background-color: #fff5f5;">
+      <div style="background-color: #fff5f5; padding: 40px 20px; min-height: 100vh;">
+        <div style="max-width: 500px; margin: 0 auto; background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(219,39,119,0.08); overflow: hidden; border: 1px solid #ffe4e6;">
+          <div style="background: ${gradient}; padding: 40px 30px; text-align: center; color: white;">
+            <div style="font-size: 54px; margin-bottom: 10px; line-height: 1;">${icon}</div>
+            <h1 style="margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.15);">
+              ${title}
+            </h1>
+          </div>
+          <div style="padding: 40px 30px; text-align: center; background: #fffdfd;">
+            <p style="margin: 0 0 10px 0; color: #e11d48; font-size: 14px; font-weight: 600; text-transform: uppercase; tracking-widest: 0.1em;">
+              Dear ${recipientName},
+            </p>
+            <p style="margin: 0 0 30px 0; color: #4b5563; font-size: 17px; line-height: 1.6; font-style: italic; font-weight: 500;">
+              "${body}"
+            </p>
+            <div style="display: inline-block; padding: 10px 24px; background-color: #fff1f2; border: 1px dashed #fecdd3; border-radius: 30px; margin-bottom: 30px;">
+              <span style="color: #db2777; font-size: 13px; font-weight: 600;">
+                Sending you lots of love and warmth! 💕
+              </span>
+            </div>
+            <div style="border-top: 1px solid #f3f4f6; padding-top: 25px;">
+              <p style="margin: 0 0 5px 0; color: #4b5563; font-size: 13px;">
+                With all my heart,
+              </p>
+              <p style="margin: 0; color: #db2777; font-size: 16px; font-weight: 700;">
+                ${senderName}
+              </p>
+            </div>
+          </div>
+          <div style="background: #fff8f8; padding: 20px; text-align: center; border-top: 1px solid #ffe4e6;">
+            <a href="https://projectcupid.vercel.app" style="color: #be123c; text-decoration: none; font-size: 12px; font-weight: 600;">
+              Open Project Cupid →
+            </a>
+            <p style="margin: 10px 0 0 0; color: #9ca3af; font-size: 10px;">
+              💕 Your Private Digital Sanctuary
+            </p>
+          </div>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
 }
 
 /**
@@ -53,13 +122,11 @@ export default async function handler(req: any, res: any) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { token, email, title, body, recipientName = "Love" }: NotifyRequest = req.body ?? {};
+  const { token, email, title, body, recipientName = "Love", senderName = "Your Partner", theme = "general" }: NotifyRequest = req.body ?? {};
 
   if (!title || !body) {
     return res.status(400).json({ error: "Missing title or body" });
   }
-
-  const resend = new Resend(process.env.RESEND_API_KEY);
 
   if (!token && !email) {
     return res.status(400).json({ error: "Missing both FCM token and email" });
@@ -100,27 +167,25 @@ export default async function handler(req: any, res: any) {
   // Attempt 2: Email Fallback via Resend
   if (email && process.env.RESEND_API_KEY) {
     try {
-      const htmlBody = `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="background: linear-gradient(135deg, #db2777 0%, #9f1239 100%); padding: 30px; border-radius: 12px; color: white; text-align: center; margin-bottom: 20px;">
-            <h1 style="margin: 0; font-size: 24px; font-weight: 600;">💌 ${title}</h1>
-          </div>
-          <div style="padding: 20px; background: #f9fafb; border-radius: 8px; color: #1f2937;">
-            <p style="font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">${body}</p>
-            <p style="font-size: 14px; color: #6b7280; margin: 0;">
-              ${recipientName}, open the app to see the full message.
-            </p>
-          </div>
-          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #9ca3af; font-size: 12px;">
-            <p style="margin: 0;">Project Cupid • Secure P2P Encrypted</p>
-          </div>
-        </div>
-      `;
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      
+      const safeTitle = String(title).substring(0, 200);
+      const safeBody = String(body).substring(0, 5000);
+      const safeName = String(recipientName).substring(0, 100);
+      const safeSender = String(senderName).substring(0, 100);
+
+      const htmlBody = createCuteNotificationEmail(
+        safeTitle,
+        safeBody,
+        safeSender,
+        safeName,
+        theme
+      );
 
       const response = await resend.emails.send({
         from: process.env.RESEND_FROM_EMAIL || "Project Cupid <cupid@verifiedbizlink.co.za>",
         to: email,
-        subject: `💝 ${title}`,
+        subject: `💝 ${safeTitle}`,
         html: htmlBody,
       });
 

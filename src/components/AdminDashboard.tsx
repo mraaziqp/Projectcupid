@@ -13,6 +13,7 @@ import { notifyPartner } from "../lib/notifications";
 const LunarCycle = lazyWithRetry(() => import("./LunarCycle"));
 const EmotionalWeather = lazyWithRetry(() => import("./EmotionalWeather"));
 const UsDrop = lazyWithRetry(() => import("./UsDrop"));
+const LoveNudges = lazyWithRetry(() => import("./LoveNudges"));
 const AdminEditor = lazyWithRetry(() => import("./AdminEditor"));
 const LetterReader = lazyWithRetry(() => import("./LetterReader"));
 const Vault = lazyWithRetry(() => import("./Vault"));
@@ -379,7 +380,8 @@ export default function AdminDashboard({ user, profile }: { user: User; profile:
       ) : (
         <Suspense fallback={<div className="py-20 text-center text-white/30">Loading radar...</div>}>
           <div className="space-y-12">
-            <LunarCycle userId={user.uid} isAdmin={true} />
+            <LoveNudges userId={user.uid} userEmail={user.email || ""} />
+            <LunarCycle userId={user.uid} userEmail={user.email || ""} isAdmin={true} />
             <EmotionalWeather userId={user.uid} userEmail={user.email || ""} />
             <UsDrop userId={user.uid} />
           </div>
