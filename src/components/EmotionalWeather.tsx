@@ -5,8 +5,9 @@ import GlassPanel from "./GlassPanel";
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 import { collection, query, where, onSnapshot, setDoc, doc, Timestamp } from "firebase/firestore";
 import { format } from "date-fns";
-import { cn } from "../lib/utils";
+import { cn, getPartnerName } from "../lib/utils";
 import { notifyPartner } from "../lib/notifications";
+import { UserProfile } from "../hooks/useAuth";
 
 interface WeatherData {
   userId: string;
@@ -59,7 +60,17 @@ const CONNECTION_BIDS = [
   "Watch something silly",
 ];
 
-export default function EmotionalWeather({ userId, userEmail }: { userId: string; userEmail: string }) {
+export default function EmotionalWeather({
+  userId,
+  userEmail,
+  currentProfile,
+  partnerProfile
+}: {
+  userId: string;
+  userEmail: string;
+  currentProfile?: UserProfile | null;
+  partnerProfile?: UserProfile | null;
+}) {
   const [myWeather, setMyWeather] = useState<WeatherData | null>(null);
   const [partnerWeather, setPartnerWeather] = useState<WeatherData | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -137,8 +148,7 @@ export default function EmotionalWeather({ userId, userEmail }: { userId: string
 
       const bidSuffix = connectionBid ? ` • Bid: ${connectionBid}` : "";
       const noteSuffix = note.trim() ? ` • Note: ${note.trim()}` : "";
-      const isMohammed = userEmail === "mraaziqp@gmail.com" || userEmail === "backupe9@gmail.com";
-      const senderName = isMohammed ? "Your Husband" : "Your Wife";
+      const senderName = currentProfile?.displayName?.split(" ")[0] || "You";
       await notifyPartner(
         userId,
         "Emotional weather updated",
@@ -183,8 +193,7 @@ export default function EmotionalWeather({ userId, userEmail }: { userId: string
   };
 
   const batteryInfo = getBatteryDescription(draftBattery);
-  const isMohammed = userEmail === "mraaziqp@gmail.com" || userEmail === "backupe9@gmail.com";
-  const partnerName = isMohammed ? "Razia" : "Mohammed";
+  const partnerName = getPartnerName(partnerProfile);
 
   return (
     <div className="space-y-6">

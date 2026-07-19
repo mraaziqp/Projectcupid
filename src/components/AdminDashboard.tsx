@@ -7,7 +7,7 @@ import { format } from "date-fns";
 import { User } from "firebase/auth";
 import { UserProfile } from "../hooks/useAuth";
 import { AnimatePresence } from "motion/react";
-import { cn, lazyWithRetry } from "../lib/utils";
+import { cn, lazyWithRetry, getPartnerProfile } from "../lib/utils";
 import { notifyPartner } from "../lib/notifications";
 
 const LunarCycle = lazyWithRetry(() => import("./LunarCycle"));
@@ -44,6 +44,7 @@ export default function AdminDashboard({ user, profile }: { user: User; profile:
   const [editContent, setEditContent] = useState("");
   const [editPublishDate, setEditPublishDate] = useState("");
   const [saving, setSaving] = useState(false);
+  const [partnerProfile, setPartnerProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     const q = query(collection(db, "letters"), orderBy("createdAt", "desc"));
@@ -67,6 +68,17 @@ export default function AdminDashboard({ user, profile }: { user: User; profile:
       }
     );
   }, []);
+
+  useEffect(() => {
+    const fetchPartnerProfile = async () => {
+      const partner = await getPartnerProfile(profile);
+      setPartnerProfile(partner);
+    };
+
+    if (profile) {
+      fetchPartnerProfile();
+    }
+  }, [profile]);
 
   const openEditModal = (item: LetterRecord) => {
     setEditingLetter(item);
@@ -368,7 +380,7 @@ export default function AdminDashboard({ user, profile }: { user: User; profile:
           {filteredHistory.length === 0 && (
             <GlassPanel className="p-12 text-center">
               <p className="text-white/40">
-                {listFilter === "received" ? "No letters from Razia yet." : listFilter === "sent" ? "No letters sent by you yet." : "No letters yet."}
+                {listFilter === "received" ? `No letters from ${partnerProfile?.displayName || "your love"} yet.` : listFilter === "sent" ? "No letters sent by you yet." : "No letters yet."}
               </p>
             </GlassPanel>
           )}
@@ -380,9 +392,9 @@ export default function AdminDashboard({ user, profile }: { user: User; profile:
       ) : (
         <Suspense fallback={<div className="py-20 text-center text-white/30">Loading radar...</div>}>
           <div className="space-y-12">
-            <LoveNudges userId={user.uid} userEmail={user.email || ""} />
-            <LunarCycle userId={user.uid} userEmail={user.email || ""} isAdmin={true} />
-            <EmotionalWeather userId={user.uid} userEmail={user.email || ""} />
+            <LoveNudges userId={user.uid} userEmail={user.email || ""} currentProfile={profile} partnerProfile={partnerProfile} />
+            <LunarCycle userId={user.uid} userEmail={user.email || ""} isAdmin={true} currentProfile={profile} partnerProfile={partnerProfile} />
+            <EmotionalWeather userId={user.uid} userEmail={user.email || ""} currentProfile={profile} partnerProfile={partnerProfile} />
             <UsDrop userId={user.uid} />
           </div>
         </Suspense>
@@ -395,7 +407,7 @@ export default function AdminDashboard({ user, profile }: { user: User; profile:
               letter={selectedLetter}
               onClose={() => setSelectedLetter(null)}
               currentUserId={user.uid}
-              currentUserName={profile?.displayName || "Mohammed"}
+              currentUserName={profile?.displayName || "My love"}
               canReply={selectedLetter.authorId !== user.uid}
             />
           </Suspense>

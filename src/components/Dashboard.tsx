@@ -5,7 +5,7 @@ import LetterCard from "./LetterCard";
 import { AnimatePresence, motion } from "motion/react";
 import { BookHeart, Package, Heart, Share2, Send } from "lucide-react";
 import GlassPanel from "./GlassPanel";
-import { cn, lazyWithRetry } from "../lib/utils";
+import { cn, lazyWithRetry, getPartnerProfile, getPartnerName } from "../lib/utils";
 import { User } from "firebase/auth";
 import { UserProfile } from "../hooks/useAuth";
 import { notifyPartner } from "../lib/notifications";
@@ -37,6 +37,7 @@ export default function Dashboard({ user, profile }: { user: User; profile: User
   const [letterContent, setLetterContent] = useState("");
   const [sendingLetter, setSendingLetter] = useState(false);
   const [sendState, setSendState] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [partnerProfile, setPartnerProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     const q = query(
@@ -54,6 +55,17 @@ export default function Dashboard({ user, profile }: { user: User; profile: User
       handleFirestoreError(error, OperationType.LIST, "letters");
     });
   }, []);
+
+  useEffect(() => {
+    const fetchPartnerProfile = async () => {
+      const partner = await getPartnerProfile(profile);
+      setPartnerProfile(partner);
+    };
+
+    if (profile) {
+      fetchPartnerProfile();
+    }
+  }, [profile]);
 
   const filteredLetters = filter === 'favorites' 
     ? letters.filter(l => l.isFavorite) 
@@ -77,40 +89,37 @@ export default function Dashboard({ user, profile }: { user: User; profile: User
         isFavorite: false,
         isRead: false,
         authorId: user.uid,
-        authorRole: "reader",
-        recipientRole: "admin",
+        authorRole: profile?.role === "admin" ? "admin" : "reader",
+        recipientRole: profile?.role === "admin" ? "reader" : "admin",
         createdAt: Timestamp.now(),
       });
 
-      // Send beautiful email and push notifications
-      const isMohammed = user.email === "mraaziqp@gmail.com" || user.email === "backupe9@gmail.com";
-      const senderName = isMohammed ? "Your Husband" : "Your Wife";
+      const partnerName = getPartnerName(partnerProfile);
+      const senderName = profile?.displayName?.split(" ")[0] || "My love";
 
-      // Hardcoded emails
-      const partnerEmail = isMohammed ? "raziashade4@gmail.com" : "mraaziqp@gmail.com";
-      const partnerName = isMohammed ? "Razia" : "Mohammed";
+      if (partnerProfile?.email) {
+        // Send beautiful letter email
+        fetch("/api/notify-letter", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: partnerProfile.email,
+            letterTitle: finalTitle,
+            letterContent: trimmedContent,
+            senderName: senderName,
+            recipientName: partnerName,
+          }),
+        }).catch((err) => console.error("Letter email failed:", err));
 
-      // Send beautiful letter email
-      fetch("/api/notify-letter", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: partnerEmail,
-          letterTitle: finalTitle,
-          letterContent: trimmedContent,
-          senderName: senderName,
-          recipientName: partnerName,
-        }),
-      }).catch((err) => console.error("Letter email failed:", err));
-
-      // Also send push notification
-      notifyPartner(user.uid, `${senderName} sent you a letter`, finalTitle, senderName).catch((notifyError) => {
-        console.error("Partner notification failed after sending letter:", notifyError);
-      });
+        // Also send push notification
+        notifyPartner(user.uid, `${senderName} sent you a letter`, finalTitle, senderName).catch((notifyError) => {
+          console.error("Partner notification failed after sending letter:", notifyError);
+        });
+      }
 
       setLetterTitle("");
       setLetterContent("");
-      setSendState({ type: "success", message: "Letter sent successfully. She's being notified now! 💕" });
+      setSendState({ type: "success", message: `Letter sent successfully. ${partnerName} is being notified! 💕` });
     } catch (error) {
       try {
         handleFirestoreError(error, OperationType.CREATE, "letters");
@@ -123,10 +132,10 @@ export default function Dashboard({ user, profile }: { user: User; profile: User
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-6 space-y-6 pb-32">
-      <main className="flex flex-col lg:flex-row gap-6">
-        {/* Left Column: Main View */}
-        <div className="flex-[1.8] space-y-6">
+    <div className="max-w-6xl mx-auto px-3 md:px-6 space-y-4 md:space-y-6 pb-32">
+      <main className="flex flex-col lg:flex-row gap-4 md:gap-6">
+        {/* Left Column: Main View + Mobile Widgets */}
+        <div className="flex-[1.8] space-y-4 md:space-y-6">
           <AnimatePresence mode="wait">
             {view === 'history' ? (
               <motion.div
@@ -135,34 +144,34 @@ export default function Dashboard({ user, profile }: { user: User; profile: User
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
               >
-                <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-8">
-                  <div className="space-y-2">
-                    <motion.p 
+                <div className="flex flex-col md:flex-row justify-between items-end gap-3 md:gap-6 mb-6 md:mb-8">
+                  <div className="space-y-1 md:space-y-2">
+                    <motion.p
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className="text-xs uppercase tracking-[0.3em] text-pink-500 font-bold"
+                      className="text-[10px] md:text-xs uppercase tracking-[0.3em] text-pink-500 font-bold"
                     >
-                       Welcome Home, {profile?.displayName?.split(" ")[0] || "Love"}
+                       Welcome, {profile?.displayName?.split(" ")[0] || "Love"}
                     </motion.p>
-                    <motion.h1 
+                    <motion.h1
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.1 }}
-                      className="text-5xl md:text-6xl font-light italic font-serif text-white tracking-tight"
+                      className="text-3xl md:text-5xl lg:text-6xl font-light italic font-serif text-white tracking-tight"
                     >
-                      Your Daily Aurora
+                      Daily Letters
                     </motion.h1>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-3 md:gap-6">
                   <AnimatePresence mode="popLayout">
                     {filteredLetters.map((letter, index) => (
                       <div key={letter.id}>
-                        <LetterCard 
-                          letter={letter} 
-                          index={index} 
-                          onClick={() => setSelectedLetter(letter)} 
+                        <LetterCard
+                          letter={letter}
+                          index={index}
+                          onClick={() => setSelectedLetter(letter)}
                         />
                       </div>
                     ))}
@@ -204,30 +213,99 @@ export default function Dashboard({ user, profile }: { user: User; profile: User
                 className="space-y-12"
               >
                 <Suspense fallback={<div className="py-20 text-center text-white/30">Loading connection features...</div>}>
-                  <LoveNudges userId={user.uid} userEmail={user.email || ""} />
-                  <LunarCycle userId={user.uid} userEmail={user.email || ""} isAdmin={false} />
-                  <EmotionalWeather userId={user.uid} userEmail={user.email || ""} />
+                  <LoveNudges userId={user.uid} userEmail={user.email || ""} currentProfile={profile} partnerProfile={partnerProfile} />
+                  <LunarCycle userId={user.uid} userEmail={user.email || ""} isAdmin={false} currentProfile={profile} partnerProfile={partnerProfile} />
+                  <EmotionalWeather userId={user.uid} userEmail={user.email || ""} currentProfile={profile} partnerProfile={partnerProfile} />
                   <UsDrop userId={user.uid} />
                 </Suspense>
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Mobile Collections Navigation */}
+          <div className="lg:hidden grid grid-cols-3 gap-2">
+            <button
+              onClick={() => { setView('history'); setFilter('all'); }}
+              className={cn(
+                "flex flex-col items-center gap-1 px-3 py-2 rounded-2xl transition-all text-xs font-semibold border",
+                view === 'history' && filter === 'all' ? "bg-white/10 border-white/20 text-white" : "text-white/40 border-transparent hover:bg-white/5"
+              )}
+            >
+              <BookHeart className="w-4 h-4" />
+              <span>Letters</span>
+              <span className="text-[10px] bg-white/10 px-1.5 py-0.5 rounded-full">{letters.length}</span>
+            </button>
+            <button
+              onClick={() => { setView('history'); setFilter('favorites'); }}
+              className={cn(
+                "flex flex-col items-center gap-1 px-3 py-2 rounded-2xl transition-all text-xs font-semibold border",
+                view === 'history' && filter === 'favorites' ? "bg-pink-500/10 border-pink-500/20 text-pink-400" : "text-white/40 border-transparent hover:bg-white/5"
+              )}
+            >
+              <Heart className="w-4 h-4" />
+              <span>Forever</span>
+              <span className="text-[10px] bg-pink-500/20 px-1.5 py-0.5 rounded-full">{letters.filter(l => l.isFavorite).length}</span>
+            </button>
+            <button
+              onClick={() => { setView('connection'); }}
+              className={cn(
+                "flex flex-col items-center gap-1 px-3 py-2 rounded-2xl transition-all text-xs font-semibold border",
+                view === 'connection' ? "bg-blue-500/10 border-blue-500/20 text-blue-400" : "text-white/40 border-transparent hover:bg-white/5"
+              )}
+            >
+              <Share2 className="w-4 h-4" />
+              <span>Connection</span>
+            </button>
+          </div>
+
+          {/* Mobile Write Back Widget */}
+          <GlassPanel className="lg:hidden p-4 space-y-3">
+            <div className="space-y-1">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-white/50">Quick Message</h3>
+            </div>
+
+            <textarea
+              value={letterContent}
+              onChange={(e) => setLetterContent(e.target.value)}
+              placeholder="Write a quick note..."
+              rows={3}
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/20 resize-none focus:outline-none focus:border-pink-500/40"
+            />
+            <button
+              onClick={handleSendLetterBack}
+              disabled={sendingLetter || !letterContent.trim()}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-white text-black text-xs font-bold uppercase tracking-widest hover:bg-pink-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Send className="w-3 h-3" />
+              {sendingLetter ? "Sending..." : "Send"}
+            </button>
+            {sendState && (
+              <p
+                className={cn(
+                  "text-xs text-center",
+                  sendState.type === "success" ? "text-emerald-300" : "text-rose-300"
+                )}
+              >
+                {sendState.message}
+              </p>
+            )}
+          </GlassPanel>
         </div>
 
-        {/* Right Column: Widgets */}
-        <aside className="flex-1 flex flex-col gap-6">
+        {/* Right Column: Widgets - Hidden on Mobile, Sidebar on Desktop */}
+        <aside className="hidden lg:flex flex-1 flex-col gap-4 md:gap-6">
           {/* Navigation/Filter Widget */}
-          <GlassPanel className="p-6 flex flex-col gap-4">
+          <GlassPanel className="p-4 flex flex-col gap-3">
              <h3 className="text-xs font-bold uppercase tracking-widest text-white/50">Collections</h3>
              <div className="flex flex-col gap-2">
                <button
                  onClick={() => { setView('history'); setFilter('all'); }}
                  className={cn(
-                   "flex items-center justify-between gap-2 px-4 py-3 rounded-2xl transition-all text-sm font-semibold border",
+                   "flex items-center justify-between gap-2 px-3 py-2 rounded-xl transition-all text-sm font-semibold border",
                    view === 'history' && filter === 'all' ? "bg-white/10 border-white/20 text-white" : "text-white/40 border-transparent hover:bg-white/5"
                  )}
                >
-                 <div className="flex items-center gap-3">
+                 <div className="flex items-center gap-2">
                     <BookHeart className="w-4 h-4" />
                     <span>Daily Letters</span>
                  </div>
@@ -236,11 +314,11 @@ export default function Dashboard({ user, profile }: { user: User; profile: User
                <button
                  onClick={() => { setView('history'); setFilter('favorites'); }}
                  className={cn(
-                   "flex items-center justify-between gap-2 px-4 py-3 rounded-2xl transition-all text-sm font-semibold border",
+                   "flex items-center justify-between gap-2 px-3 py-2 rounded-xl transition-all text-sm font-semibold border",
                    view === 'history' && filter === 'favorites' ? "bg-pink-500/10 border-pink-500/20 text-pink-400" : "text-white/40 border-transparent hover:bg-white/5"
                  )}
                >
-                 <div className="flex items-center gap-3">
+                 <div className="flex items-center gap-2">
                     <Heart className="w-4 h-4" />
                     <span>Forever Book</span>
                  </div>
@@ -249,11 +327,11 @@ export default function Dashboard({ user, profile }: { user: User; profile: User
                <button
                  onClick={() => { setView('connection'); }}
                  className={cn(
-                   "flex items-center justify-between gap-2 px-4 py-3 rounded-2xl transition-all text-sm font-semibold border",
+                   "flex items-center justify-between gap-2 px-3 py-2 rounded-xl transition-all text-sm font-semibold border",
                    view === 'connection' ? "bg-blue-500/10 border-blue-500/20 text-blue-400" : "text-white/40 border-transparent hover:bg-white/5"
                  )}
                >
-                 <div className="flex items-center gap-3">
+                 <div className="flex items-center gap-2">
                     <Share2 className="w-4 h-4" />
                     <span>Connection</span>
                  </div>
@@ -263,61 +341,61 @@ export default function Dashboard({ user, profile }: { user: User; profile: User
 
           {/* Vault Widget */}
           <GlassPanel className={cn(
-            "p-6 flex flex-col gap-4 bg-gradient-to-br transition-all",
+            "p-4 flex flex-col gap-3 bg-gradient-to-br transition-all",
             view === 'vault' ? "from-pink-500/20 to-transparent border-pink-500/30" : "from-white/5 to-transparent"
           )}>
              <h3 className="text-xs font-bold uppercase tracking-widest text-white/50">The Vault</h3>
-             <div className="space-y-3">
-                <div onClick={() => setView('vault')} className="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between group cursor-pointer hover:bg-white/10 transition-all">
+             <div className="space-y-2">
+                <div onClick={() => setView('vault')} className="p-3 bg-white/5 border border-white/10 rounded-xl flex items-center justify-between group cursor-pointer hover:bg-white/10 transition-all">
                   <span className="text-sm font-medium text-white/80">Permanent Letters</span>
-                  <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-pink-400">
-                    <Heart size={12} fill="currentColor" />
+                  <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-pink-400">
+                    <Heart size={11} fill="currentColor" />
                   </div>
                 </div>
              </div>
-             <button 
+             <button
                onClick={() => setView(view === 'vault' ? 'history' : 'vault')}
                className={cn(
-                 "mt-2 w-full py-3 border border-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all",
+                 "mt-1 w-full py-2 border border-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all",
                  view === 'vault' ? "text-pink-400 border-pink-500/30 bg-pink-500/10" : "text-white/40 hover:text-white hover:bg-white/5"
                )}
              >
-               {view === 'vault' ? "Close the Vault" : "Explore the Vault"}
+               {view === 'vault' ? "Close" : "Explore"}
              </button>
           </GlassPanel>
 
           {/* Write Back Widget */}
-          <GlassPanel className="p-6 space-y-4">
+          <GlassPanel className="p-4 space-y-3">
             <div className="space-y-1">
               <h3 className="text-xs font-bold uppercase tracking-widest text-white/50">Write Back</h3>
-              <p className="text-xs text-white/40">Send a letter back to your love.</p>
+              <p className="text-[10px] text-white/40">Send a letter to your love.</p>
             </div>
 
             <input
               value={letterTitle}
               onChange={(e) => setLetterTitle(e.target.value)}
-              placeholder="Letter title (optional)"
+              placeholder="Title (optional)"
               className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-pink-500/40"
             />
             <textarea
               value={letterContent}
               onChange={(e) => setLetterContent(e.target.value)}
               placeholder="Write your heart out..."
-              rows={4}
+              rows={3}
               className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/20 resize-none focus:outline-none focus:border-pink-500/40"
             />
             <button
               onClick={handleSendLetterBack}
               disabled={sendingLetter || !letterContent.trim()}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white text-black text-xs font-bold uppercase tracking-widest hover:bg-pink-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-white text-black text-xs font-bold uppercase tracking-widest hover:bg-pink-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Send className="w-4 h-4" />
-              {sendingLetter ? "Sending..." : "Send Letter"}
+              <Send className="w-3 h-3" />
+              {sendingLetter ? "Sending..." : "Send"}
             </button>
             {sendState && (
               <p
                 className={cn(
-                  "text-xs",
+                  "text-xs text-center",
                   sendState.type === "success" ? "text-emerald-300" : "text-rose-300"
                 )}
               >
@@ -327,28 +405,30 @@ export default function Dashboard({ user, profile }: { user: User; profile: User
           </GlassPanel>
 
           {/* Hardware Widget */}
-          <div className="h-48 bg-gradient-to-br from-blue-600/10 to-purple-600/10 backdrop-blur-2xl border border-white/10 rounded-[32px] p-8 relative overflow-hidden flex flex-col justify-end">
-            <div className="absolute top-0 right-0 p-6 text-white/5 pointer-events-none transform rotate-12">
-               <Heart size={80} fill="currentColor" />
-            </div>
-            <h3 className="text-xs font-bold uppercase tracking-widest text-white/30 mb-3 block">Hardware Hub</h3>
-            <div className="space-y-1">
-              <div className="text-2xl font-light italic font-serif">ESP32 Lamp</div>
-              <div className="flex items-center gap-2">
-                {letters.some(l => !l.isRead) ? (
-                  <>
-                    <div className="w-2 h-2 bg-pink-500 rounded-full animate-pulse"></div>
-                    <span className="text-sm text-pink-400 font-medium">Pulse Mode: Aurora</span>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-2 h-2 bg-blue-500/40 rounded-full"></div>
-                    <span className="text-sm text-white/40 font-medium">Mode: Resting</span>
-                  </>
-                )}
+          {letters.length > 0 && (
+            <div className="h-48 bg-gradient-to-br from-blue-600/10 to-purple-600/10 backdrop-blur-2xl border border-white/10 rounded-[32px] p-8 relative overflow-hidden flex flex-col justify-end">
+              <div className="absolute top-0 right-0 p-6 text-white/5 pointer-events-none transform rotate-12">
+                 <Heart size={80} fill="currentColor" />
+              </div>
+              <h3 className="text-xs font-bold uppercase tracking-widest text-white/30 mb-3 block">Connection Status</h3>
+              <div className="space-y-1">
+                <div className="text-2xl font-light italic font-serif">Letters Shared</div>
+                <div className="flex items-center gap-2">
+                  {letters.some(l => !l.isRead) ? (
+                    <>
+                      <div className="w-2 h-2 bg-pink-500 rounded-full animate-pulse"></div>
+                      <span className="text-sm text-pink-400 font-medium">Unread message waiting</span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-2 h-2 bg-blue-500/40 rounded-full"></div>
+                      <span className="text-sm text-white/40 font-medium">All caught up</span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </aside>
       </main>
 

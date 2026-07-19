@@ -7,6 +7,7 @@ import { collection, query, where, orderBy, limit, onSnapshot, addDoc, Timestamp
 import { notifyPartner } from "../lib/notifications";
 import { differenceInDays, format, startOfDay, addMonths } from "date-fns";
 import { cn } from "../lib/utils";
+import { UserProfile } from "../hooks/useAuth";
 
 interface CycleData {
   id: string;
@@ -205,14 +206,18 @@ function CentralGlowMoon({ day, size = 64 }: { day: number; size?: number }) {
   );
 }
 
-export default function LunarCycle({ 
-  userId, 
-  userEmail, 
-  isAdmin 
-}: { 
-  userId: string; 
-  userEmail: string; 
-  isAdmin: boolean 
+export default function LunarCycle({
+  userId,
+  userEmail,
+  isAdmin,
+  currentProfile,
+  partnerProfile
+}: {
+  userId: string;
+  userEmail: string;
+  isAdmin: boolean;
+  currentProfile?: UserProfile | null;
+  partnerProfile?: UserProfile | null;
 }) {
   const [cycle, setCycle] = useState<CycleData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -236,7 +241,7 @@ export default function LunarCycle({
   // Qada Tracker State
   const [qadaMissed, setQadaMissed] = useState(0);
   const [qadaCompleted, setQadaCompleted] = useState(0);
-  const [partnerProfileName, setPartnerProfileName] = useState("Razia");
+  const [partnerProfileName, setPartnerProfileName] = useState("Love");
 
   const today = new Date();
   const hijriDate = useMemo(() => {
@@ -250,6 +255,13 @@ export default function LunarCycle({
       return "Islamic Moon Syncing...";
     }
   }, [today]);
+
+  // Update partner name when partnerProfile changes
+  useEffect(() => {
+    if (partnerProfile?.displayName) {
+      setPartnerProfileName(partnerProfile.displayName);
+    }
+  }, [partnerProfile]);
 
   useEffect(() => {
     // 1. Cycle Log Listener
@@ -325,8 +337,7 @@ export default function LunarCycle({
       });
       setGhuslLogged(false);
 
-      const isMohammed = userEmail === "mraaziqp@gmail.com" || userEmail === "backupe9@gmail.com";
-      const senderName = isMohammed ? "Your Husband" : "Your Wife";
+      const senderName = currentProfile?.displayName?.split(" ")[0] || "You";
       await notifyPartner(
         userId,
         "Period Started (Hayd Active) 🌹",
@@ -358,8 +369,7 @@ export default function LunarCycle({
     try {
       setGhuslLogged(true);
 
-      const isMohammed = userEmail === "mraaziqp@gmail.com" || userEmail === "backupe9@gmail.com";
-      const senderName = isMohammed ? "Your Husband" : "Your Wife";
+      const senderName = currentProfile?.displayName?.split(" ")[0] || "You";
       
       await notifyPartner(
         userId,
@@ -424,8 +434,7 @@ export default function LunarCycle({
         createdAt: Timestamp.now()
       });
 
-      const isMohammed = userEmail === "mraaziqp@gmail.com" || userEmail === "backupe9@gmail.com";
-      const senderName = isMohammed ? "Your Husband" : "Your Wife";
+      const senderName = currentProfile?.displayName?.split(" ")[0] || "You";
       await notifyPartner(
         userId,
         "New Craving Quest! 🍫",
@@ -456,8 +465,7 @@ export default function LunarCycle({
     try {
       await updateDoc(doc(db, "care_quests", id), { status: "fulfilled" });
 
-      const isMohammed = userEmail === "mraaziqp@gmail.com" || userEmail === "backupe9@gmail.com";
-      const senderName = isMohammed ? "Your Husband" : "Your Wife";
+      const senderName = currentProfile?.displayName?.split(" ")[0] || "You";
       
       await notifyPartner(
         userId, 
@@ -494,8 +502,7 @@ export default function LunarCycle({
         symptomsTimestamp: Timestamp.now()
       });
 
-      const isMohammed = userEmail === "mraaziqp@gmail.com" || userEmail === "backupe9@gmail.com";
-      const senderName = isMohammed ? "Your Husband" : "Your Wife";
+      const senderName = currentProfile?.displayName?.split(" ")[0] || "You";
       
       const loggedList = Object.entries(newSymptoms)
         .filter(([_, level]) => level !== "none")
@@ -521,8 +528,7 @@ export default function LunarCycle({
   const triggerSOS = async () => {
     setSosSending(true);
     try {
-      const isMohammed = userEmail === "mraaziqp@gmail.com" || userEmail === "backupe9@gmail.com";
-      const senderName = isMohammed ? "Your Husband" : "Your Wife";
+      const senderName = currentProfile?.displayName?.split(" ")[0] || "You";
       
       await notifyPartner(
         userId,

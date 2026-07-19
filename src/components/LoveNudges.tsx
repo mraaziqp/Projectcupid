@@ -2,12 +2,15 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import GlassPanel from "./GlassPanel";
 import { notifyPartner } from "../lib/notifications";
-import { cn } from "../lib/utils";
+import { cn, getPartnerName } from "../lib/utils";
 import { Send, Sparkles, Heart } from "lucide-react";
+import { UserProfile } from "../hooks/useAuth";
 
 interface LoveNudgesProps {
   userId: string;
   userEmail: string;
+  currentProfile?: UserProfile | null;
+  partnerProfile?: UserProfile | null;
 }
 
 const NUDGES = [
@@ -42,7 +45,7 @@ interface Particle {
   duration: number;
 }
 
-export default function LoveNudges({ userId, userEmail }: LoveNudgesProps) {
+export default function LoveNudges({ userId, userEmail, currentProfile, partnerProfile }: LoveNudgesProps) {
   const [activeTab, setActiveTab] = useState<"nudges" | "feelings">("nudges");
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
@@ -55,9 +58,8 @@ export default function LoveNudges({ userId, userEmail }: LoveNudgesProps) {
   const [customEmoji, setCustomEmoji] = useState("❤️");
   const [customTheme, setCustomTheme] = useState<"pink" | "teal" | "purple" | "amber">("pink");
 
-  const isMohammed = userEmail === "mraaziqp@gmail.com" || userEmail === "backupe9@gmail.com";
-  const senderName = isMohammed ? "Your Husband" : "Your Wife";
-  const partnerName = isMohammed ? "Razia" : "Mohammed";
+  const senderName = currentProfile?.displayName?.split(" ")[0] || "My love";
+  const partnerName = getPartnerName(partnerProfile);
 
   const triggerParticleBurst = (emoji: string, event?: React.MouseEvent<HTMLButtonElement>) => {
     let startX = 150;
