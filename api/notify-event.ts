@@ -37,22 +37,24 @@ export default async function handler(req: any, res: any) {
     const { subject, html } = generateStorybookEmailHtml(payload);
     const resendApiKey = process.env.RESEND_API_KEY;
 
-    // Simulation / graceful fallback if API key is not yet set
+    // Graceful fallback if API key is not yet configured (Do not fake successful delivery)
     if (!resendApiKey) {
-      const simulatedResponse = {
-        success: true,
+      const fallbackResponse = {
+        success: false,
+        delivered: false,
         isSimulation: true,
         messageId: `sim_${Date.now()}_resend`,
         recipient: recipientEmail,
         eventType,
         subject,
         timestamp: new Date().toISOString(),
-        note: "RESEND_API_KEY environment variable is not configured. Email logged in simulation mode."
+        error: "RESEND_API_KEY environment variable is not configured. Live delivery not performed.",
+        note: "To enable live email dispatch, configure RESEND_API_KEY in Vercel project environment variables."
       };
 
-      console.log(`[Project Cupid Email] Simulated dispatch to ${recipientEmail}: "${subject}"`);
-      processedEvents.set(idempotencyKey, { timestamp: Date.now(), response: simulatedResponse });
-      return res.status(200).json(simulatedResponse);
+      console.warn(`[Project Cupid Email] Live delivery skipped for ${recipientEmail}: "${subject}" (RESEND_API_KEY not configured)`);
+      processedEvents.set(idempotencyKey, { timestamp: Date.now(), response: fallbackResponse });
+      return res.status(200).json(fallbackResponse);
     }
 
     // Real dispatch via Resend

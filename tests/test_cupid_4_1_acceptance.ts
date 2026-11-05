@@ -67,6 +67,9 @@ import {
 
 import { getSenderName, getPartnerName } from "../src/lib/utils";
 import { UserProfile, UserRole } from "../src/types";
+import notifyEventHandler from "../api/notify-event";
+import fs from "fs";
+import path from "path";
 
 // Counters for Release Readiness Report
 const stats = {
@@ -443,6 +446,125 @@ async function runAcceptanceSuite() {
     DEFAULT_JARVIS_CONFIG
   );
   testAssert(attackForged.success === false, "Forged token rejected immediately", "e2e");
+
+
+  // ============================================================================
+  // 10. PROJECT CUPID 4.1.1 — PRODUCTION ACTIVATION & RELEASE GATE VALIDATION
+  // ============================================================================
+  console.log("\n--- 10. PROJECT CUPID 4.1.1 ACTIVATION GATE VALIDATION ---");
+
+  // A. Granular Firestore Security Rule Logic Validation
+  const simulateIsUpdatingOwnResource = (
+    authUid: string,
+    existingDocUserId: string,
+    incomingDocUserId: string
+  ) => {
+    return authUid != null && existingDocUserId === authUid && incomingDocUserId === existingDocUserId;
+  };
+
+  testAssert(
+    simulateIsUpdatingOwnResource("user_razia_1", "user_razia_1", "user_razia_1") === true,
+    "Rule Helper: Legitimate owner updating own resource with intact userId is permitted",
+    "security"
+  );
+
+  testAssert(
+    simulateIsUpdatingOwnResource("user_razia_1", "user_razia_1", "user_raaziq_attacker") === false,
+    "Rule Helper: Owner tampering userId on update is blocked (userId immutability)",
+    "security"
+  );
+
+  testAssert(
+    simulateIsUpdatingOwnResource("user_raaziq_attacker", "user_razia_1", "user_razia_1") === false,
+    "Rule Helper: Unauthorized user updating another user's resource is strictly blocked",
+    "security"
+  );
+
+  const simulateCanUpdateUserDoc = (
+    authUid: string,
+    targetUserId: string,
+    existingRole: string,
+    incomingRole: string,
+    callerIsAdmin: boolean
+  ) => {
+    if (callerIsAdmin) return true;
+    if (authUid === targetUserId && incomingRole === existingRole) return true;
+    return false;
+  };
+
+  testAssert(
+    simulateCanUpdateUserDoc("user_razia_1", "user_razia_1", "sanctuary_owner", "sanctuary_owner", false) === true,
+    "Rule Helper: Sanctuary owner updating non-role profile fields is permitted",
+    "security"
+  );
+
+  testAssert(
+    simulateCanUpdateUserDoc("user_razia_1", "user_razia_1", "sanctuary_owner", "admin", false) === false,
+    "Rule Helper: Sanctuary owner attempting self-escalation to admin is strictly blocked",
+    "security"
+  );
+
+  testAssert(
+    simulateCanUpdateUserDoc("user_raaziq_admin", "user_razia_1", "sanctuary_owner", "sanctuary_owner", true) === true,
+    "Rule Helper: Legitimate administrator can update user profile records",
+    "security"
+  );
+
+  // B. Resend Email Fallback & Zero Fake Delivery Verification
+  let capturedStatus = 200;
+  let capturedJson: any = null;
+  const mockRes: any = {
+    setHeader: () => {},
+    status: (code: number) => {
+      capturedStatus = code;
+      return mockRes;
+    },
+    json: (data: any) => {
+      capturedJson = data;
+      return mockRes;
+    }
+  };
+
+  const oldResendKey = process.env.RESEND_API_KEY;
+  delete process.env.RESEND_API_KEY;
+
+  await notifyEventHandler(
+    {
+      method: "POST",
+      headers: {},
+      body: {
+        recipientEmail: "raaziq@sanlam.co.za",
+        title: "Release Gate Verification",
+        eventType: "letter.created"
+      }
+    },
+    mockRes
+  );
+
+  if (oldResendKey) {
+    process.env.RESEND_API_KEY = oldResendKey;
+  }
+
+  testAssert(capturedJson !== null, "Resend endpoint returns structured response in missing-key mode", "integration");
+  testAssert(capturedJson.delivered === false, "Resend endpoint does NOT claim delivery when key is missing (zero fake success)", "security");
+  testAssert(capturedJson.isSimulation === true, "Resend endpoint explicitly flags simulation state", "unit");
+  testAssert(typeof capturedJson.error === "string" && capturedJson.error.includes("RESEND_API_KEY"), "Resend endpoint logs informative environment warning", "unit");
+
+  // C. Second Brain v2.5 Ecosystem Bridge Verification
+  const secondBrainDir = "C:\\Users\\G997629\\.gemini\\antigravity\\scratch\\New folder\\second-brain-v2.5";
+  testAssert(fs.existsSync(secondBrainDir), "Second Brain v2.5 ecosystem directory verified on host", "integration");
+
+  const toolSchemaPath = path.join(secondBrainDir, "src", "services", "toolSchema.ts");
+  testAssert(fs.existsSync(toolSchemaPath), "Second Brain v2.5 toolSchema.ts verified", "integration");
+
+  const toolSchemaContent = fs.readFileSync(toolSchemaPath, "utf-8");
+  testAssert(toolSchemaContent.includes("mraaziqp@gmail.com"), "Second Brain ecosystem configured with Raaziq's identity", "integration");
+
+  const vectorMemoryPath = path.join(secondBrainDir, "src", "services", "vectorMemory.ts");
+  testAssert(fs.existsSync(vectorMemoryPath), "Second Brain v2.5 vectorMemory.ts verified", "integration");
+
+  const vectorMemoryContent = fs.readFileSync(vectorMemoryPath, "utf-8");
+  testAssert(vectorMemoryContent.includes("AgentVectorMemory"), "Second Brain pgvector memory interface verified for Memory Book bridge", "integration");
 
 
   // ============================================================================

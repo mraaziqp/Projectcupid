@@ -10,6 +10,7 @@ import jarvisToolsHandler from "./api/jarvis/tools";
 import jarvisHealthHandler from "./api/jarvis/health";
 import jarvisExecuteHandler from "./api/jarvis/execute";
 import memoryBookSyncHandler from "./api/memory-book/sync";
+import favoriteHandler from "./api/bridge/favorite";
 import { createLetterNotificationEmail, createSimpleNotificationEmail, createCuteNotificationEmail } from "./src/lib/emailTemplates";
 
 dotenv.config();
@@ -363,36 +364,8 @@ async function startServer() {
     }
   });
 
-  // Forever Book API Bridge
-  app.post("/api/bridge/favorite", async (req, res) => {
-    const secret = req.headers["x-bridge-secret"];
-    const BRIDGE_SECRET = "cupid-forever-bridge-2024";
-
-    if (secret !== BRIDGE_SECRET) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
-    try {
-      const { title, content, date } = req.body;
-      
-      console.log(`[Bridge] Archiving letter: ${title}`);
-      
-      // In a real scenario, this would POST to 'The Forever Book' endpoint
-      // For now, we simulate the success of the bridge
-      /*
-      await fetch("https://the-forever-book.deploy.app/api/ingest", {
-        method: "POST",
-        headers: { "X-Bridge-Secret": BRIDGE_SECRET },
-        body: JSON.stringify({ title, content, date, source: "Project Cupid" })
-      });
-      */
-
-      res.json({ status: "bridged", message: "Letter pushed to Forever Book" });
-    } catch (error) {
-      console.error("Bridge Target Error:", error);
-      res.status(500).json({ error: "Bridge failed" });
-    }
-  });
+  // Forever Book API Bridge (Audited with Zero-Leak Privacy Wall)
+  app.all("/api/bridge/favorite", (req, res) => favoriteHandler(req, res));
 
   // Vite middleware
   if (process.env.NODE_ENV !== "production") {
