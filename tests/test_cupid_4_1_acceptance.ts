@@ -68,6 +68,9 @@ import {
 import { getSenderName, getPartnerName } from "../src/lib/utils";
 import { UserProfile, UserRole } from "../src/types";
 import notifyEventHandler from "../api/notify-event";
+import favoriteHandler from "../api/bridge/favorite";
+import memoryBookSyncHandler from "../api/memory-book/sync";
+import jarvisExecuteHandler from "../api/jarvis/execute";
 import fs from "fs";
 import path from "path";
 
@@ -565,6 +568,180 @@ async function runAcceptanceSuite() {
 
   const vectorMemoryContent = fs.readFileSync(vectorMemoryPath, "utf-8");
   testAssert(vectorMemoryContent.includes("AgentVectorMemory"), "Second Brain pgvector memory interface verified for Memory Book bridge", "integration");
+
+
+  // ============================================================================
+  // 11. PROJECT CUPID 4.1.4 — WORKSTATION-INDEPENDENT API SECURITY & ALLOWLIST VERIFICATION
+  // ============================================================================
+  console.log("\n--- 11. API SECURITY & POSITIVE ALLOWLIST AUDIT ---");
+
+  // Helper for mock response capture
+  const createMockRes = () => {
+    let statusCode = 200;
+    let jsonBody: any = null;
+    const res: any = {
+      setHeader: () => res,
+      status: (code: number) => {
+        statusCode = code;
+        return res;
+      },
+      json: (data: any) => {
+        jsonBody = data;
+        return res;
+      },
+      getStatusCode: () => statusCode,
+      getBody: () => jsonBody
+    };
+    return res;
+  };
+
+  // 1. Forever Book Bridge: Reject Unapproved Category
+  const mockRes1 = createMockRes();
+  await favoriteHandler(
+    {
+      method: "POST",
+      headers: { "x-bridge-secret": "cupid-forever-bridge-2024" },
+      body: {
+        title: "Sneaky Health Post",
+        content: "Trying to bridge health log",
+        category: "wellbeing_health_cycle"
+      }
+    },
+    mockRes1
+  );
+  testAssert(mockRes1.getStatusCode() === 403, "API Bridge: Unapproved category rejected with 403 Forbidden", "security");
+
+  // 2. Forever Book Bridge: Reject Unexpected Foreign Fields (Disallowing nested health objects)
+  const mockRes2 = createMockRes();
+  await favoriteHandler(
+    {
+      method: "POST",
+      headers: { "x-bridge-secret": "cupid-forever-bridge-2024" },
+      body: {
+        title: "Normal Title",
+        content: "Normal Content",
+        category: "love_letter",
+        unauthorizedHealthData: { bloodPressure: "120/80" }
+      }
+    },
+    mockRes2
+  );
+  testAssert(mockRes2.getStatusCode() === 400, "API Bridge: Unexpected/foreign fields rejected with 400 Bad Request", "security");
+
+  // 3. Forever Book Bridge: Accept Legitimate Relationship Memory
+  const mockRes3 = createMockRes();
+  await favoriteHandler(
+    {
+      method: "POST",
+      headers: { "x-bridge-secret": "cupid-forever-bridge-2024" },
+      body: {
+        title: "Sunset Walk at Sea Point",
+        content: "Holding hands watching the waves",
+        category: "milestone",
+        date: "2026-11-05"
+      }
+    },
+    mockRes3
+  );
+  testAssert(mockRes3.getStatusCode() === 200 && mockRes3.getBody()?.status === "bridged", "API Bridge: Legitimate relationship memory accepted", "integration");
+
+  // 4. Memory Book Sync: Reject Unapproved Author
+  const mockRes4 = createMockRes();
+  await memoryBookSyncHandler(
+    {
+      method: "POST",
+      headers: { authorization: "Bearer cupid-forever-bridge-2024" },
+      body: {
+        title: "Forged Entry",
+        content: "Forged content",
+        category: "milestone",
+        author: "MaliciousThirdParty"
+      }
+    },
+    mockRes4
+  );
+  testAssert(mockRes4.getStatusCode() === 400, "Memory Book Sync: Unapproved author rejected with 400 Bad Request", "security");
+
+  // 5. Memory Book Sync: Reject Unapproved Category
+  const mockRes5 = createMockRes();
+  await memoryBookSyncHandler(
+    {
+      method: "POST",
+      headers: { authorization: "Bearer cupid-forever-bridge-2024" },
+      body: {
+        title: "Personal Cycle Entry",
+        content: "Cycle reflection",
+        category: "menstrual_health",
+        author: "Razia"
+      }
+    },
+    mockRes5
+  );
+  testAssert(mockRes5.getStatusCode() === 403, "Memory Book Sync: Unapproved category rejected with 403 Forbidden", "security");
+
+  // 6. Memory Book Sync: Accept Legitimate Memory
+  const mockRes6 = createMockRes();
+  await memoryBookSyncHandler(
+    {
+      method: "POST",
+      headers: { authorization: "Bearer cupid-forever-bridge-2024" },
+      body: {
+        title: "Our Coffee Tradition",
+        content: "Morning espresso together",
+        category: "tradition",
+        author: "Razia",
+        date: "2026-11-05"
+      }
+    },
+    mockRes6
+  );
+  testAssert(mockRes6.getStatusCode() === 200 && mockRes6.getBody()?.success === true, "Memory Book Sync: Legitimate scrapbook memory accepted", "integration");
+
+  // 7. Jarvis Execute: Reject Unapproved Tool (Positive Tool Allowlist)
+  const mockRes7 = createMockRes();
+  await jarvisExecuteHandler(
+    {
+      method: "POST",
+      headers: { "x-jarvis-key": "cupid_jarvis_live_bridge_key" },
+      body: {
+        tool: "cupid_read_private_cycle_logs",
+        params: {}
+      }
+    },
+    mockRes7
+  );
+  testAssert(mockRes7.getStatusCode() === 403, "Jarvis Execute: Unapproved tool rejected by strict positive allowlist (403 Forbidden)", "security");
+
+  // 8. Jarvis Execute: Accept Approved Tool
+  const mockRes8 = createMockRes();
+  await jarvisExecuteHandler(
+    {
+      method: "POST",
+      headers: { "x-jarvis-key": "cupid_jarvis_live_bridge_key" },
+      body: {
+        tool: "cupid_get_status",
+        params: {}
+      }
+    },
+    mockRes8
+  );
+  testAssert(mockRes8.getStatusCode() === 200 && mockRes8.getBody()?.success === true, "Jarvis Execute: Approved tool executed successfully", "integration");
+
+  // 9. Notify Event: Reject Unapproved EventType
+  const mockRes9 = createMockRes();
+  await notifyEventHandler(
+    {
+      method: "POST",
+      headers: {},
+      body: {
+        recipientEmail: "raaziq@sanlam.co.za",
+        title: "Suspicious Event",
+        eventType: "wellbeing.cycle_notification"
+      }
+    },
+    mockRes9
+  );
+  testAssert(mockRes9.getStatusCode() === 400, "Notify Event: Unapproved eventType rejected with 400 Bad Request", "security");
 
 
   // ============================================================================

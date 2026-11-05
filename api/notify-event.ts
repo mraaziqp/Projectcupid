@@ -1,6 +1,18 @@
 import { Resend } from "resend";
 import { generateStorybookEmailHtml, EmailNotificationPayload } from "../src/lib/emailService";
 
+const ALLOWED_EVENT_TYPES = new Set([
+  "letter.created",
+  "letter.scheduled_unlocked",
+  "letter.reply",
+  "message_box.daily_ready",
+  "message_box.contributed",
+  "memory.created",
+  "capsule.unlocked",
+  "voucher.gifted",
+  "surprise.sent"
+]);
+
 // In-memory idempotency cache for duplicate request suppression
 const processedEvents = new Map<string, { timestamp: number; response: any }>();
 
@@ -28,9 +40,15 @@ export default async function handler(req: any, res: any) {
     const payload = req.body as EmailNotificationPayload;
     const { recipientEmail, title, eventType } = payload ?? {};
 
-    if (!recipientEmail || !title) {
+    if (!recipientEmail || typeof recipientEmail !== "string" || !title || typeof title !== "string") {
       return res.status(400).json({
-        error: "Missing required fields: recipientEmail and title are mandatory"
+        error: "Missing or invalid required fields: recipientEmail and title are mandatory strings"
+      });
+    }
+
+    if (!eventType || !ALLOWED_EVENT_TYPES.has(eventType)) {
+      return res.status(400).json({
+        error: `Bad Request: Invalid eventType '${eventType}'. Only authorized relationship events can trigger notifications.`
       });
     }
 

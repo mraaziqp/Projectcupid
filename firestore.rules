@@ -159,6 +159,20 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Jarvis Ecosystem Structured Events (Immutable, append-only)
+    match /jarvis_events/{docId} {
+      allow get, list: if isAdmin();
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
+
+    // Server & Client Notification Dispatch Logs (Immutable, append-only)
+    match /notificationLogs/{docId} {
+      allow get, list: if isAdmin();
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
+
     // =========================================================================
     // HER WELLBEING SANCTUARY — STRICT OWNER-ONLY PRIVACY (ZERO-LEAK GUARANTEE)
     // Raaziq's administrator role CANNOT bypass this.

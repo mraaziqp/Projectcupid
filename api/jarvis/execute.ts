@@ -1,5 +1,16 @@
 import { executeJarvisTool, DEFAULT_JARVIS_CONFIG, JarvisPermissionConfig } from "../../src/lib/jarvisIntegration";
 
+const ALLOWED_JARVIS_TOOLS = new Set([
+  "cupid_get_status",
+  "cupid_add_memory",
+  "cupid_draft_letter",
+  "cupid_add_message_box",
+  "cupid_add_appreciation",
+  "cupid_add_dream",
+  "cupid_add_date_idea",
+  "cupid_get_shared_memories"
+]);
+
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -30,7 +41,15 @@ export default async function handler(req: any, res: any) {
     });
   }
 
-  // 2. Strict Privacy Wall: Hard reject any attempt to query health or personal journals
+  // 2. Strict Tool Positive-Allowlist: Hard block any tool not in the 8 approved relationship capabilities
+  if (!ALLOWED_JARVIS_TOOLS.has(activeToolName)) {
+    return res.status(403).json({
+      success: false,
+      error: `Forbidden: Tool '${activeToolName}' is not in the authorized Project Cupid Jarvis registry. Private health and administrative tools are strictly inaccessible.`
+    });
+  }
+
+  // 3. Defense-in-Depth Keyword Privacy Wall
   const lowerName = activeToolName.toLowerCase();
   if (
     lowerName.includes("health") ||
