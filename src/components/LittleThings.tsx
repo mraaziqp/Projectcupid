@@ -25,6 +25,7 @@ import {
   INITIAL_SURPRISE_POOL
 } from "../lib/seedData";
 import { format } from "date-fns";
+import { dispatchEmailNotification } from "../lib/emailService";
 
 interface LittleThingsProps {
   currentProfile: UserProfile | null;
@@ -101,6 +102,18 @@ export default function LittleThings({ currentProfile, partnerProfile }: LittleT
     setVoucherTitle("");
     setVoucherDesc("");
     showToast("Digital love voucher gifted!");
+
+    if (partnerProfile?.email) {
+      dispatchEmailNotification({
+        recipientEmail: partnerProfile.email,
+        recipientName: partnerProfile.displayName || "My Beloved",
+        senderName: authorName,
+        eventType: "voucher.gifted",
+        title: `A New Love Voucher for You: ${newVoucher.title} 🎟️`,
+        previewText: newVoucher.description,
+        deepLink: window.location.origin
+      }).catch(err => console.warn("Email error:", err));
+    }
   };
 
   const handleGenerateSurprise = () => {

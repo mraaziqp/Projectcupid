@@ -5,6 +5,10 @@ import { GoogleGenAI } from "@google/genai";
 import * as admin from "firebase-admin";
 import { Resend } from "resend";
 import dotenv from "dotenv";
+import notifyEventHandler from "./api/notify-event";
+import jarvisToolsHandler from "./api/jarvis/tools";
+import jarvisHealthHandler from "./api/jarvis/health";
+import jarvisExecuteHandler from "./api/jarvis/execute";
 import { createLetterNotificationEmail, createSimpleNotificationEmail, createCuteNotificationEmail } from "./src/lib/emailTemplates";
 
 dotenv.config();
@@ -47,6 +51,14 @@ async function startServer() {
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });
   });
+
+  // Event Notifications Endpoint (Storybook HTML via Resend)
+  app.all("/api/notify-event", (req, res) => notifyEventHandler(req, res));
+
+  // Jarvis Ecosystem Integration Endpoints
+  app.all("/api/jarvis/tools", (req, res) => jarvisToolsHandler(req, res));
+  app.all("/api/jarvis/health", (req, res) => jarvisHealthHandler(req, res));
+  app.all("/api/jarvis/execute", (req, res) => jarvisExecuteHandler(req, res));
 
   // FCM Push Notifications (legacy endpoint, kept for compatibility)
   app.post("/api/notify", async (req, res) => {

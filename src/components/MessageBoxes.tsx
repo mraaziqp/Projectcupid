@@ -29,6 +29,7 @@ import {
   reactToMessageBox,
   getTodayDateStr
 } from "../lib/messageBoxService";
+import { dispatchEmailNotification } from "../lib/emailService";
 
 interface MessageBoxesProps {
   currentProfile: UserProfile | null;
@@ -190,6 +191,21 @@ export default function MessageBoxes({ currentProfile, partnerProfile }: Message
       // Refresh boxes
       const list = await getMessageBoxes(currentUserId, currentUserRole);
       setAllMessages(list);
+
+      // Notify partner discreetly via email
+      if (partnerProfile?.email) {
+        dispatchEmailNotification({
+          recipientEmail: partnerProfile.email,
+          recipientName: partnerProfile.displayName || "My Beloved",
+          senderName: isAnonymous ? "Someone who adores you" : authorDisplayName,
+          eventType: "message_box.contributed",
+          title: "A Little Surprise Was Just Sealed For You",
+          previewText: isSecret
+            ? "A little surprise note has been tucked inside your virtual boxes for you to find."
+            : newContent.slice(0, 100),
+          deepLink: window.location.origin
+        }).catch(err => console.warn("Email dispatch error:", err));
+      }
 
       setTimeout(() => setSuccessToast(""), 4000);
     } catch (e) {
