@@ -26,33 +26,61 @@ export function lazyWithRetry<T extends ComponentType<any>>(
 export async function getPartnerProfile(currentProfile: UserProfile | null): Promise<UserProfile | null> {
   if (!currentProfile) return null;
 
-  const partnerRole: UserRole = currentProfile.role === "admin" ? "reader" : "admin";
+  const isAdmin = currentProfile.role === "admin";
 
   try {
-    const q = query(collection(db, "users"), where("role", "==", partnerRole));
-    const snapshot = await getDocs(q);
-
-    if (!snapshot.empty) {
-      return snapshot.docs[0].data() as UserProfile;
+    if (isAdmin) {
+      // Find Razia (sanctuary_owner, partner, or reader)
+      for (const targetRole of ["sanctuary_owner", "partner", "reader"] as UserRole[]) {
+        const q = query(collection(db, "users"), where("role", "==", targetRole));
+        const snapshot = await getDocs(q);
+        if (!snapshot.empty) {
+          return snapshot.docs[0].data() as UserProfile;
+        }
+      }
+    } else {
+      // Find Raaziq (admin)
+      const q = query(collection(db, "users"), where("role", "==", "admin"));
+      const snapshot = await getDocs(q);
+      if (!snapshot.empty) {
+        return snapshot.docs[0].data() as UserProfile;
+      }
     }
   } catch (error) {
     console.error("Failed to get partner profile:", error);
   }
 
-  return null;
+  // Fallback partner profile
+  return {
+    uid: isAdmin ? "partner-razia" : "partner-raaziq",
+    email: isAdmin ? "raziashade4@gmail.com" : "mraaziqp@gmail.com",
+    role: isAdmin ? "sanctuary_owner" : "admin",
+    displayName: isAdmin ? "Razia" : "Raaziq"
+  };
 }
 
-export function getSenderName(currentProfile: UserProfile | null, partnerName?: string): string {
-  if (!currentProfile) return "My love";
+export function getSenderName(currentProfile: UserProfile | null, fallbackName?: string): string {
+  if (!currentProfile) return fallbackName || "My love";
+
+  if (currentProfile.displayName) {
+    return currentProfile.displayName.split(" ")[0];
+  }
 
   if (currentProfile.role === "admin") {
-    return currentProfile.displayName?.split(" ")[0] || "I";
-  } else {
-    return partnerName?.split(" ")[0] || "My love";
+    return "Raaziq";
   }
+
+  return "Razia";
 }
 
-export function getPartnerName(partnerProfile: UserProfile | null): string {
-  if (!partnerProfile) return "Love";
-  return partnerProfile.displayName || "Love";
+export function getPartnerName(partnerProfile: UserProfile | null, currentProfile?: UserProfile | null): string {
+  if (partnerProfile?.displayName) {
+    return partnerProfile.displayName.split(" ")[0];
+  }
+
+  if (currentProfile?.role === "admin") {
+    return "Razia";
+  }
+
+  return "Raaziq";
 }

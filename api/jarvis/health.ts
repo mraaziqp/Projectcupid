@@ -11,7 +11,7 @@ export default async function handler(req: any, res: any) {
   return res.status(200).json({
     status: "healthy",
     application: "Project Cupid",
-    version: "3.0.0",
+    version: "4.1.0",
     bridgeVersion: "2.5.0",
     authenticated: true,
     capabilities: JARVIS_CUPID_TOOLS.map(t => t.name),

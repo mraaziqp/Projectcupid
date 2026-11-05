@@ -537,7 +537,7 @@ export default function OurFuture({ currentProfile, partnerProfile }: OurFutureP
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <GlassPanel className="p-5 rounded-2xl border-white/10 space-y-3">
               <div className="flex items-center justify-between pb-2 border-b border-white/10">
-                <span className="font-mono text-xs text-rose-300 font-bold">October 25 (Annual)</span>
+                <span className="font-mono text-xs text-rose-300 font-bold">September 06 (Annual)</span>
                 <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-rose-500/20 text-rose-300">Anniversary</span>
               </div>
               <h4 className="font-serif text-base text-white font-medium">Our Wedding Anniversary & Vows Night</h4>

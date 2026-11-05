@@ -70,9 +70,9 @@ async function runCupid4Verification() {
   assert(openedSession.status === "opened", "Status correctly recorded as 'opened'");
   assert(Boolean(openedSession.openedAt), "Opened surprise has valid timestamp");
 
-  // 1.5 Special occasions recognition
-  const anniversaryDate = SPECIAL_RELATIONSHIP_DATES.find(d => d.dateStr === "10-25");
-  assert(Boolean(anniversaryDate), "Found October 25 Wedding Anniversary special occasion");
+  // 1.5 Special occasions recognition (Verified: September 06 Wedding Anniversary)
+  const anniversaryDate = SPECIAL_RELATIONSHIP_DATES.find(d => d.dateStr === "09-06");
+  assert(Boolean(anniversaryDate), "Found September 6 Wedding Anniversary special occasion");
   assert(anniversaryDate?.style === "keepsake_box", "Wedding Anniversary uses Belle Époque keepsake box style");
 
   const greeting = getRandomGreeting();
@@ -82,11 +82,11 @@ async function runCupid4Verification() {
   // SUITE 2: TWO-USER ROLE ISOLATION & STRICT PRIVACY BOUNDARIES
   console.log("\n--- 2. TWO-USER ROLE ISOLATION & CROSS-ACCOUNT PRIVACY ---");
   
-  // Verify Raaziq (Owner / Admin) identity
+  // Verify Raaziq (Owner / Admin) & Razia (Sanctuary Owner) identity
   const raaziqRole = "admin";
-  const raziaRole = "reader";
+  const raziaRole = "sanctuary_owner";
   assert(raaziqRole === "admin", "Raaziq role is administrator");
-  assert(raziaRole === "reader", "Razia role is reader / sanctuary owner");
+  assert(raziaRole === "sanctuary_owner", "Razia role is sanctuary owner / partner");
 
   // Privacy Gateway: Block health access attempts via Jarvis or API
   const blockedHealth1 = await executeJarvisTool("cupid_read_cycle_data", {}, DEFAULT_JARVIS_CONFIG.apiKey, DEFAULT_JARVIS_CONFIG);

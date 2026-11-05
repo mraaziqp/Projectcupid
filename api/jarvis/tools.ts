@@ -19,7 +19,7 @@ export default async function handler(req: any, res: any) {
 
   return res.status(200).json({
     application: "Project Cupid",
-    version: "3.0.0",
+    version: "4.1.0",
     description: "Private romantic marriage & women's wellbeing sanctuary",
     ecosystem: "Jarvis Second-Brain v2.5",
     toolsCount: JARVIS_CUPID_TOOLS.length,

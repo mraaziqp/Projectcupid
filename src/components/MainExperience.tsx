@@ -76,9 +76,9 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
   const [dailySelection, setDailySelection] = useState<DailyBoxSelection | null>(null);
   const [isDailyDeferred, setIsDailyDeferred] = useState(false);
 
-  const effectiveRole = isPreviewingPartner ? "reader" : profile?.role || "reader";
+  const effectiveRole = isPreviewingPartner ? "sanctuary_owner" : profile?.role || "sanctuary_owner";
   const isAdmin = effectiveRole === "admin";
-  const displayName = profile?.displayName || (effectiveRole === "admin" ? "Raaziq" : "Razia");
+  const displayName = profile?.displayName || (isAdmin ? "Raaziq" : "Razia");
 
   useEffect(() => {
     const fetchPartner = async () => {
@@ -436,7 +436,7 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
               <HerWellbeing
                 currentProfile={profile}
                 partnerProfile={partnerProfile}
-                isPartnerView={!isAdmin}
+                isPartnerView={isAdmin}
               />
             </motion.div>
           )}

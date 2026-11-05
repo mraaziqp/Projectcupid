@@ -108,7 +108,8 @@ export default function HerWellbeing({
   isPartnerView = false
 }: HerWellbeingProps) {
   const currentUserId = currentProfile?.uid || "guest";
-  const isWife = currentProfile?.role === "reader" || currentProfile?.email !== "backupe9@gmail.com";
+  const isRaaziq = currentProfile?.role === "admin" || currentProfile?.email === "mraaziqp@gmail.com" || currentProfile?.email === "backupe9@gmail.com";
+  const isWife = !isRaaziq;
 
   // Active Tab
   const [activeTab, setActiveTab] = useState<
@@ -366,14 +367,14 @@ export default function HerWellbeing({
     showNotification("Health report downloaded.");
   };
 
-  // If partner is viewing and wife has disabled partner sharing:
-  if (!isWife && settings && !settings.shareWithPartner) {
+  // If partner is viewing and wife has disabled partner sharing (or by default):
+  if ((isPartnerView || !isWife) && (!settings || !settings.shareWithPartner)) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-16 text-center space-y-4">
         <Lock className="w-12 h-12 text-rose-300 mx-auto opacity-70" />
         <h2 className="text-2xl font-serif-title font-light">Her Private Sanctuary</h2>
         <p className="text-white/60 text-sm leading-relaxed max-w-md mx-auto">
-          Razia has chosen to keep her personal wellbeing companion private. This space belongs solely to her, respecting complete personal health privacy.
+          Razia's personal wellbeing companion is private by default. When she chooses to share gentle care updates or cycle phases, they will appear here to help you care for her with love and tenderness.
         </p>
       </div>
     );

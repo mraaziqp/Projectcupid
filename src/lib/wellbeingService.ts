@@ -37,9 +37,9 @@ const CACHE_PREFIX = "cupid_wb_";
 
 export const DEFAULT_WELLBEING_SETTINGS: WellbeingSettings = {
   userId: "",
-  shareWithPartner: true,
-  shareCyclePhase: true,
-  shareCareCravings: true,
+  shareWithPartner: false, // Private by default
+  shareCyclePhase: false,
+  shareCareCravings: false,
   showFertilityEstimates: true,
   showPhaseEducation: true,
   hydrationTargetGlasses: 8

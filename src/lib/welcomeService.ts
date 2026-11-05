@@ -1,4 +1,6 @@
 import { format } from "date-fns";
+import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
+import { db } from "./firebase";
 
 export interface DailyWelcomeStatus {
   date: string;
@@ -8,7 +10,8 @@ export interface DailyWelcomeStatus {
   styleChoice: "antique_envelope" | "keepsake_box" | "vintage_parcel";
 }
 
-// Special dates for Raaziq & Razia
+// Special relationship dates for Raaziq & Razia
+// Verified: Wedding date is September 6 (09-06 / 2026-09-06)
 export const SPECIAL_RELATIONSHIP_DATES: Array<{
   dateStr: string; // MM-dd format
   title: string;
@@ -16,7 +19,7 @@ export const SPECIAL_RELATIONSHIP_DATES: Array<{
   customGreeting: string;
 }> = [
   {
-    dateStr: "10-25",
+    dateStr: "09-06",
     title: "Our Wedding Day & Forever Anniversary",
     style: "keepsake_box",
     customGreeting: "Happy Anniversary, my beloved wife. Another year of endless love."
@@ -69,12 +72,14 @@ export function getRandomGreeting(): string {
 
 export function getDailyWelcomeState(userId: string): DailyWelcomeStatus {
   const today = getTodayKey();
-  const raw = localStorage.getItem(`cupid_welcome_${userId}_${today}`);
-  if (raw) {
-    try {
-      return JSON.parse(raw);
-    } catch (e) {
-      // fallback
+  if (typeof localStorage !== "undefined") {
+    const raw = localStorage.getItem(`cupid_welcome_${userId}_${today}`);
+    if (raw) {
+      try {
+        return JSON.parse(raw);
+      } catch (e) {
+        // fallback
+      }
     }
   }
 
@@ -87,24 +92,67 @@ export function getDailyWelcomeState(userId: string): DailyWelcomeStatus {
   };
 }
 
-export function setDailyWelcomeState(userId: string, status: DailyWelcomeStatus["status"]): void {
+/**
+ * Persists welcome state locally and synchronizes across devices via Firestore
+ */
+export async function setDailyWelcomeState(userId: string, status: DailyWelcomeStatus["status"]): Promise<void> {
   const today = getTodayKey();
   const special = getTodaySpecialOccasion();
   const data: DailyWelcomeStatus = {
     date: today,
     userId,
     status,
-    openedAt: status === "opened" ? new Date().toISOString() : undefined,
-    styleChoice: special ? special.style : "antique_envelope"
+    styleChoice: special ? special.style : "antique_envelope",
+    ...(status === "opened" ? { openedAt: new Date().toISOString() } : {})
   };
-  localStorage.setItem(`cupid_welcome_${userId}_${today}`, JSON.stringify(data));
+
+  // 1. Immediate local cache for zero UI lag
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem(`cupid_welcome_${userId}_${today}`, JSON.stringify(data));
+  }
+
+  // 2. Cloud persistence for cross-device consistency
+  try {
+    const docRef = doc(db, "daily_welcome_status", `${userId}_${today}`);
+    await setDoc(docRef, {
+      ...data,
+      updatedAt: Timestamp.now()
+    }, { merge: true });
+  } catch (err) {
+    console.warn("[DailyWelcome] Cloud persistence notice (using local offline cache):", err);
+  }
+}
+
+/**
+ * Synchronizes daily welcome state from Firestore (e.g. if opened on phone, laptop reflects it)
+ */
+export async function syncDailyWelcomeStateFromCloud(userId: string): Promise<DailyWelcomeStatus> {
+  const today = getTodayKey();
+  try {
+    const docRef = doc(db, "daily_welcome_status", `${userId}_${today}`);
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      const cloudData = snap.data() as DailyWelcomeStatus;
+      if (typeof localStorage !== "undefined") {
+        localStorage.setItem(`cupid_welcome_${userId}_${today}`, JSON.stringify(cloudData));
+      }
+      return cloudData;
+    }
+  } catch (err) {
+    console.warn("[DailyWelcome] Cloud sync fallback to local cache:", err);
+  }
+
+  return getDailyWelcomeState(userId);
 }
 
 export function isWelcomeConfigEnabled(): boolean {
+  if (typeof localStorage === "undefined") return true;
   const val = localStorage.getItem("cupid_welcome_auto_enabled");
   return val === null ? true : val === "true";
 }
 
 export function setWelcomeConfigEnabled(enabled: boolean): void {
-  localStorage.setItem("cupid_welcome_auto_enabled", enabled ? "true" : "false");
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem("cupid_welcome_auto_enabled", enabled ? "true" : "false");
+  }
 }

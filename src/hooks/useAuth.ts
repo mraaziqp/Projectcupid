@@ -3,7 +3,7 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db, handleFirestoreError, OperationType } from "../lib/firebase";
 
-export type UserRole = "admin" | "reader";
+export type UserRole = "admin" | "sanctuary_owner" | "partner" | "reader";
 
 export interface UserProfile {
   uid: string;
@@ -29,15 +29,27 @@ export function useAuth() {
           let snap = await getDoc(userDoc);
           
           if (!snap.exists()) {
-            // New user - default to reader, unless it's the creator's email
-            // Use the email from the auth token directly for reliability
-            const email = firebaseUser.email || "test-reader@cupid.com";
-            const isAdmin = email === "backupe9@gmail.com"; 
+            // Identify Raaziq as admin, Razia as sanctuary_owner
+            const email = (firebaseUser.email || "test-user@cupid.com").toLowerCase();
+            const isAdmin = email === "mraaziqp@gmail.com" || email === "backupe9@gmail.com";
+            const isRazia = email === "raziashade4@gmail.com";
+
+            let assignedRole: UserRole = "reader";
+            let defaultName = "Beloved Guest";
+
+            if (isAdmin) {
+              assignedRole = "admin";
+              defaultName = "Raaziq";
+            } else if (isRazia) {
+              assignedRole = "sanctuary_owner";
+              defaultName = "Razia";
+            }
+
             const initialProfile: UserProfile = {
               uid: firebaseUser.uid,
               email: email,
-              role: isAdmin ? "admin" : "reader",
-              displayName: firebaseUser.displayName || "Test Reader",
+              role: assignedRole,
+              displayName: firebaseUser.displayName || defaultName,
             };
             await setDoc(userDoc, initialProfile);
             setProfile(initialProfile);

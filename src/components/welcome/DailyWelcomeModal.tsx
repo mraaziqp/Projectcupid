@@ -18,12 +18,12 @@ import {
   getTodaySpecialOccasion,
   setDailyWelcomeState
 } from "../../lib/welcomeService";
-import { MessageBoxItem, DailyBoxSelection } from "../../types";
+import { MessageBoxItem, DailyBoxSelection, UserRole } from "../../types";
 import { markBoxAsOpened, toggleBoxFavorite, reactToMessageBox } from "../../lib/messageBoxService";
 
 interface DailyWelcomeModalProps {
   userId: string;
-  userRole: "admin" | "reader";
+  userRole: UserRole;
   dailyMessage: MessageBoxItem | null;
   dailySelection: DailyBoxSelection | null;
   onClose: () => void;

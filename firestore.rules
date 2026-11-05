@@ -18,27 +18,27 @@ service cloud.firestore {
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    function isReader() {
+    function isPartner() {
       return isSignedIn() && 
              exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'reader';
+             (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['sanctuary_owner', 'partner', 'reader']);
     }
 
     function isAllowedUser() {
-      return isAdmin() || isReader();
+      return isAdmin() || isPartner();
     }
 
     // Users
     match /users/{userId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && request.auth.uid == userId && (
-        request.resource.data.role == 'reader' || 
-        (request.resource.data.role == 'admin' && request.auth.token.email == 'backupe9@gmail.com')
+        request.resource.data.role in ['sanctuary_owner', 'partner', 'reader'] || 
+        (request.resource.data.role == 'admin' && request.auth.token.email in ['mraaziqp@gmail.com', 'backupe9@gmail.com'])
       );
-      allow update: if isAdmin() || (isSignedIn() && request.auth.uid == userId);
+      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
     }
 
-    // App Collections - Love & Messages
+    // App Collections - Love & Messages (Shared by Raaziq & Razia)
     match /letters/{docId} {
       allow read, write: if isAllowedUser();
     }
@@ -94,10 +94,7 @@ service cloud.firestore {
       allow read, write: if isAllowedUser();
     }
 
-    // Wellness & Care
-    match /cycle_logs/{docId} {
-      allow read, write: if isAllowedUser();
-    }
+    // Shared Wellness & Care
     match /weather/{docId} {
       allow read, write: if isAllowedUser();
     }
@@ -111,24 +108,60 @@ service cloud.firestore {
       allow read, write: if isAllowedUser();
     }
 
-    // Her Wellbeing Private Sanctuary - Strict User-Level Privacy
-    match /wellbeing_symptoms/{docId} {
+    // Memory Book Scrapbook
+    match /memory_book/{docId} {
       allow read, write: if isAllowedUser();
+    }
+
+    // Daily Magical Welcome Persistence (Cross-device sync)
+    match /daily_welcome_status/{docId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // Jarvis Ecosystem Audit Logs (Immutable audit trail)
+    match /jarvis_audit_logs/{docId} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn() || isAdmin();
+      allow update, delete: if false;
+    }
+
+    // =========================================================================
+    // HER WELLBEING SANCTUARY — STRICT OWNER-ONLY PRIVACY
+    // Raaziq's administrator role CANNOT bypass this.
+    // Zero cross-account data leakage.
+    // =========================================================================
+    match /cycle_logs/{docId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+    match /wellbeing_symptoms/{docId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
     match /wellbeing_moods/{docId} {
-      allow read, write: if isAllowedUser();
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
     match /wellbeing_medications/{docId} {
-      allow read, write: if isAllowedUser();
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
     match /wellbeing_appointments/{docId} {
-      allow read, write: if isAllowedUser();
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
     match /wellbeing_journal/{docId} {
-      allow read, write: if isAllowedUser();
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
     match /wellbeing_settings/{docId} {
-      allow read, write: if isAllowedUser();
+      allow read, write: if isSignedIn() && request.auth.uid == docId;
     }
   }
 }
