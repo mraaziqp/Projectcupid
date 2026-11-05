@@ -51,10 +51,10 @@ export default function AdminEditor({
       });
 
       // Send beautiful email and push notifications
-      const isMohammed = userEmail === "mraaziqp@gmail.com" || userEmail === "backupe9@gmail.com";
-      const senderName = isMohammed ? "Your Husband" : "Your Wife";
-      const partnerEmail = isMohammed ? "raziashade4@gmail.com" : "mraaziqp@gmail.com";
-      const partnerName = isMohammed ? "Razia" : "Mohammed";
+      const isRaaziq = userEmail === "mraaziqp@gmail.com" || userEmail === "backupe9@gmail.com";
+      const senderName = isRaaziq ? "Your Husband" : "Your Wife";
+      const partnerEmail = isRaaziq ? "raziashade4@gmail.com" : "mraaziqp@gmail.com";
+      const partnerName = isRaaziq ? "Razia" : "Raaziq";
 
       // Send beautiful letter email
       fetch("/api/notify-letter", {
@@ -201,7 +201,7 @@ export default function AdminEditor({
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 spellCheck={true}
-                placeholder="Write your heart out, Mohammed..."
+                placeholder="Write your heart out, Raaziq..."
                 className={cn(
                   "flex-1 bg-transparent text-lg text-white/70 placeholder:text-white/10 border-none focus:ring-0 p-0 resize-none font-sans leading-relaxed transition-all",
                   (aiOptimizing || aiProofreading) && "opacity-50 scale-[0.99] blur-[1px] cursor-wait"

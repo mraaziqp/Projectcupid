@@ -313,7 +313,7 @@ export default function LunarCycle({
           const data = docSnap.data();
           setQadaMissed(data.qadaMissed || 0);
           setQadaCompleted(data.qadaCompleted || 0);
-          setPartnerProfileName(data.displayName || (isAdmin ? "Razia" : "Mohammed"));
+          setPartnerProfileName(data.displayName || (isAdmin ? "Razia" : "Raaziq"));
           setActiveSymptoms(data.activeSymptoms || {});
         }
       });
@@ -1345,7 +1345,7 @@ export default function LunarCycle({
               <div className="space-y-2">
                 <h3 className="text-xl font-serif italic text-white">Your Sanctuary is Alerted</h3>
                 <p className="text-xs text-white/50 leading-relaxed">
-                  We have transmitted an urgent Sanctuary notification and email directly to Mohammed. 
+                  We have transmitted an urgent Sanctuary notification and email directly to Raaziq. 
                   He has been requested to assist with tea, heating pads, and sweet support.
                 </p>
               </div>

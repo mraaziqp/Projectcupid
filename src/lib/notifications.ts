@@ -33,16 +33,16 @@ export async function notifyPartner(
   const myEmail = myData?.email || "";
 
   // Determine partner email and name explicitly
-  // Hardwired connection: if current user is Mohammed, partner is Razia (and vice versa)
-  const isMeMohammed = 
+  // Hardwired connection: if current user is Raaziq, partner is Razia (and vice versa)
+  const isMeRaaziq = 
     myEmail.toLowerCase() === "mraaziqp@gmail.com" || 
     myEmail.toLowerCase() === "backupe9@gmail.com" ||
     currentUserId === "mraaziqp" || 
     senderName === "Your Husband";
 
-  const partnerEmail = isMeMohammed ? "raziashade4@gmail.com" : "mraaziqp@gmail.com";
-  const partnerName = isMeMohammed ? "Razia" : "Mohammed";
-  const actualSenderName = senderName || (isMeMohammed ? "Your Husband" : "Your Wife");
+  const partnerEmail = isMeRaaziq ? "raziashade4@gmail.com" : "mraaziqp@gmail.com";
+  const partnerName = isMeRaaziq ? "Razia" : "Raaziq";
+  const actualSenderName = senderName || (isMeRaaziq ? "Your Husband" : "Your Wife");
 
   // Always write to Firestore so the in-app listener picks it up too
   await addDoc(collection(db, "notifications"), {

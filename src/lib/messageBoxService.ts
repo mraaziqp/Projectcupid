@@ -310,3 +310,17 @@ export async function reactToMessageBox(
     console.warn("Could not save reaction:", e);
   }
 }
+
+export async function reshuffleMessageBoxes(): Promise<void> {
+  const all = await getMessageBoxes("admin", "admin");
+  for (const b of all) {
+    try {
+      await updateDoc(doc(db, MESSAGE_BOXES_COL, b.id), {
+        isOpened: false,
+        cycleNumber: (b.cycleNumber || 1) + 1
+      });
+    } catch (e) {
+      // ignore
+    }
+  }
+}

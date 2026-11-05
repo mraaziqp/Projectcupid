@@ -1,6 +1,6 @@
 /**
  * Jarvis Ecosystem Integration Adapter for Project Cupid
- * Coordinates with Mohammed's Jarvis Second-Brain ecosystem (v2.5)
+ * Coordinates with Raaziq's Jarvis Second-Brain ecosystem (v2.5)
  * Strict Privacy Boundaries: Private health data and private journals are completely walled off.
  */
 
@@ -118,7 +118,7 @@ export const JARVIS_CUPID_TOOLS: JarvisToolDefinition[] = [
   },
   {
     name: "cupid_draft_letter",
-    description: "Creates a draft love letter for Razia. Requires Mohammed's manual review in the app before sending.",
+    description: "Creates a draft love letter for Razia. Requires Raaziq's manual review in the app before sending.",
     category: "shared_content",
     parameters: {
       type: "object",

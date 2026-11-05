@@ -9,6 +9,7 @@ import notifyEventHandler from "./api/notify-event";
 import jarvisToolsHandler from "./api/jarvis/tools";
 import jarvisHealthHandler from "./api/jarvis/health";
 import jarvisExecuteHandler from "./api/jarvis/execute";
+import memoryBookSyncHandler from "./api/memory-book/sync";
 import { createLetterNotificationEmail, createSimpleNotificationEmail, createCuteNotificationEmail } from "./src/lib/emailTemplates";
 
 dotenv.config();
@@ -59,6 +60,7 @@ async function startServer() {
   app.all("/api/jarvis/tools", (req, res) => jarvisToolsHandler(req, res));
   app.all("/api/jarvis/health", (req, res) => jarvisHealthHandler(req, res));
   app.all("/api/jarvis/execute", (req, res) => jarvisExecuteHandler(req, res));
+  app.all("/api/memory-book/sync", (req, res) => memoryBookSyncHandler(req, res));
 
   // FCM Push Notifications (legacy endpoint, kept for compatibility)
   app.post("/api/notify", async (req, res) => {

@@ -70,7 +70,7 @@ async function runTests() {
       eventType,
       recipientEmail: "test@cupid.com",
       recipientName: "Razia",
-      senderName: "Mohammed",
+      senderName: "Raaziq",
       title: "Our Anniversary Reflection",
       content: "A gentle memory of the day we began this beautiful journey together."
     });
@@ -86,7 +86,7 @@ async function runTests() {
     eventType: "letter.created",
     recipientEmail: "test@cupid.com",
     recipientName: "Razia",
-    senderName: "Mohammed",
+    senderName: "Raaziq",
     title: "Very Sensitive Subject",
     content: "Private medical information",
     isDiscreet: true

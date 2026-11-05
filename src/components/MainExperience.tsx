@@ -13,10 +13,13 @@ import {
   Menu,
   X,
   LogOut,
-  Bell
+  Bell,
+  BookOpen,
+  Shield,
+  HelpCircle
 } from "lucide-react";
 import { User as FirebaseUser } from "firebase/auth";
-import { UserProfile } from "../types";
+import { UserProfile, MessageBoxItem, DailyBoxSelection } from "../types";
 import { auth, db } from "../lib/firebase";
 import { collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
 import { getPartnerProfile } from "../lib/utils";
@@ -24,12 +27,22 @@ import { getPartnerProfile } from "../lib/utils";
 import HomeDashboard from "./HomeDashboard";
 import OurLove from "./OurLove";
 import MessageBoxes from "./MessageBoxes";
+import MemoryBook from "./MemoryBook";
 import HerWellbeing from "./HerWellbeing";
 import OurFuture from "./OurFuture";
 import LittleThings from "./LittleThings";
 import SettingsScreen from "./SettingsScreen";
+import AdminCommandCentre from "./AdminCommandCentre";
 import AdminEditor from "./AdminEditor";
 import LetterReader from "./LetterReader";
+
+import { DailyWelcomeModal } from "./welcome/DailyWelcomeModal";
+import { OnboardingModal } from "./help/OnboardingModal";
+import {
+  getDailyWelcomeState,
+  isWelcomeConfigEnabled
+} from "../lib/welcomeService";
+import { getOrSelectDailyBox } from "../lib/messageBoxService";
 
 interface MainExperienceProps {
   user: FirebaseUser;
@@ -40,10 +53,12 @@ export type AppSpace =
   | "home"
   | "love"
   | "boxes"
+  | "memory_book"
   | "wellbeing"
   | "future"
   | "little"
   | "settings"
+  | "admin_centre"
   | "write_letter";
 
 export default function MainExperience({ user, profile }: MainExperienceProps) {
@@ -53,6 +68,13 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isPreviewingPartner, setIsPreviewingPartner] = useState(false);
   const [selectedLetter, setSelectedLetter] = useState<any | null>(null);
+
+  // Daily Welcome & Onboarding State
+  const [showDailyWelcome, setShowDailyWelcome] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [dailyMessage, setDailyMessage] = useState<MessageBoxItem | null>(null);
+  const [dailySelection, setDailySelection] = useState<DailyBoxSelection | null>(null);
+  const [isDailyDeferred, setIsDailyDeferred] = useState(false);
 
   const effectiveRole = isPreviewingPartner ? "reader" : profile?.role || "reader";
   const isAdmin = effectiveRole === "admin";
@@ -66,6 +88,7 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
     if (profile) fetchPartner();
   }, [profile]);
 
+  // Letters Realtime Subscription
   useEffect(() => {
     const q = query(
       collection(db, "letters"),
@@ -86,10 +109,39 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
     return () => unsub();
   }, []);
 
+  // Daily Welcome Session Initialization
+  useEffect(() => {
+    const initSession = async () => {
+      try {
+        const { selection, message } = await getOrSelectDailyBox(user.uid);
+        setDailySelection(selection);
+        setDailyMessage(message);
+
+        const welcomeState = getDailyWelcomeState(user.uid);
+        if (welcomeState.status === "unseen" && isWelcomeConfigEnabled() && !selection.isOpened) {
+          setShowDailyWelcome(true);
+        } else if (welcomeState.status === "deferred" || (!selection.isOpened && welcomeState.status !== "opened")) {
+          setIsDailyDeferred(true);
+        }
+
+        // Check first-time onboarding
+        const hasCompletedOnboarding = localStorage.getItem(`cupid_onboarding_completed_${user.uid}`);
+        if (!hasCompletedOnboarding && welcomeState.status !== "unseen") {
+          setShowOnboarding(true);
+        }
+      } catch (e) {
+        console.warn("Daily session init error:", e);
+      }
+    };
+
+    initSession();
+  }, [user.uid]);
+
   const navItems = [
     { id: "home", label: "Home", icon: Home },
     { id: "love", label: "Our Love", icon: BookHeart },
-    { id: "boxes", label: "Message Boxes", icon: Gift, hasBadge: true },
+    { id: "boxes", label: "Message Boxes", icon: Gift, hasBadge: isDailyDeferred },
+    { id: "memory_book", label: "Memory Book", icon: BookOpen },
     { id: "wellbeing", label: "Her Wellbeing", icon: ShieldCheck },
     { id: "future", label: "Our Future", icon: Compass },
     { id: "little", label: "Little Things", icon: Sparkles }
@@ -113,10 +165,21 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
                 Project Cupid
               </span>
               <span className="text-[10px] text-rose-300 block font-mono -mt-1 tracking-widest">
-                Our Little Universe
+                Our Little Universe • 4.0
               </span>
             </div>
           </div>
+
+          {/* Unopened Daily Surprise Reminder Pill */}
+          {isDailyDeferred && dailyMessage && !dailyMessage.isOpened && (
+            <button
+              onClick={() => setShowDailyWelcome(true)}
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-rose-500/20 via-amber-500/20 to-rose-500/20 border border-rose-400/40 text-amber-200 text-xs font-serif shadow-lg animate-pulse hover:scale-105 transition"
+            >
+              <Gift className="w-3.5 h-3.5 text-rose-400" />
+              <span>Today's Gift Waiting (Tap to Open)</span>
+            </button>
+          )}
 
           {/* Desktop Navigation Links */}
           <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
@@ -127,7 +190,7 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
                 <button
                   key={item.id}
                   onClick={() => setActiveSpace(item.id as AppSpace)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 relative ${
+                  className={`px-2.5 xl:px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 relative ${
                     isActive
                       ? "bg-white/10 text-white font-semibold border border-white/15 shadow-sm"
                       : "text-white/60 hover:text-white hover:bg-white/5"
@@ -143,8 +206,25 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
             })}
           </nav>
 
-          {/* Right Action Icons: Admin Quick Write, User Badge, Mobile Toggle */}
+          {/* Right Action Icons */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Admin Command Centre Shortcut for Raaziq */}
+            {profile?.role === "admin" && (
+              <button
+                onClick={() => setActiveSpace("admin_centre")}
+                className={`p-2 sm:px-3 py-1.5 rounded-xl border text-xs font-serif transition-all flex items-center gap-1.5 ${
+                  activeSpace === "admin_centre"
+                    ? "bg-rose-500/30 text-rose-200 border-rose-500/50 shadow-sm"
+                    : "bg-white/5 border-white/10 text-stone-300 hover:text-white hover:bg-white/10"
+                }`}
+                title="Admin Command Centre"
+              >
+                <Shield className="w-3.5 h-3.5 text-rose-400" />
+                <span className="hidden xl:inline">Command Centre</span>
+              </button>
+            )}
+
+            {/* Quick Letter Write (Admin only) */}
             {profile?.role === "admin" && (
               <button
                 onClick={() => setActiveSpace(activeSpace === "write_letter" ? "home" : "write_letter")}
@@ -160,6 +240,16 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
               </button>
             )}
 
+            {/* Tour / Help Button */}
+            <button
+              onClick={() => setShowOnboarding(true)}
+              className="p-2 rounded-xl bg-white/5 border border-white/10 text-white/50 hover:text-white transition"
+              title="Interactive App Tour"
+            >
+              <HelpCircle className="w-4 h-4" />
+            </button>
+
+            {/* Settings Screen */}
             <button
               onClick={() => setActiveSpace("settings")}
               className={`p-2 rounded-xl border transition-all ${
@@ -225,12 +315,25 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
                   </button>
                 );
               })}
+
+              {profile?.role === "admin" && (
+                <button
+                  onClick={() => {
+                    setActiveSpace("admin_centre");
+                    setMobileMenuOpen(false);
+                  }}
+                  className="p-3 rounded-2xl border border-rose-500/30 bg-rose-950/20 text-rose-200 text-left flex items-center gap-2.5"
+                >
+                  <Shield className="w-4 h-4 shrink-0 text-rose-400" />
+                  <span className="text-xs truncate">Admin Command</span>
+                </button>
+              )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* MOBILE BOTTOM NAVIGATION BAR (Instant Thumb Access) */}
+      {/* MOBILE BOTTOM NAVIGATION BAR */}
       <div className="fixed bottom-3 left-3 right-3 z-40 lg:hidden max-w-md mx-auto">
         <div className="h-14 px-3 bg-[#0d0b12]/90 backdrop-blur-2xl border border-white/15 rounded-2xl shadow-2xl flex items-center justify-around">
           {navItems.slice(0, 5).map((item) => {
@@ -255,8 +358,8 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
         </div>
       </div>
 
-      {/* MAIN CONTENT AREA */}
-      <main className="pt-24 sm:pt-28 md:pt-32 min-h-screen">
+      {/* MAIN SPACES CONTAINER */}
+      <main className="pt-24 sm:pt-28">
         <AnimatePresence mode="wait">
           {activeSpace === "home" && (
             <motion.div
@@ -301,6 +404,21 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
               transition={{ duration: 0.3 }}
             >
               <MessageBoxes
+                currentProfile={profile}
+                partnerProfile={partnerProfile}
+              />
+            </motion.div>
+          )}
+
+          {activeSpace === "memory_book" && (
+            <motion.div
+              key="memory_book"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+            >
+              <MemoryBook
                 currentProfile={profile}
                 partnerProfile={partnerProfile}
               />
@@ -370,6 +488,23 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
             </motion.div>
           )}
 
+          {activeSpace === "admin_centre" && (
+            <motion.div
+              key="admin_centre"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+            >
+              <AdminCommandCentre
+                currentProfile={profile}
+                partnerProfile={partnerProfile}
+                onNavigateHome={() => setActiveSpace("home")}
+                onReplayOnboarding={() => setShowOnboarding(true)}
+              />
+            </motion.div>
+          )}
+
           {activeSpace === "write_letter" && (
             <motion.div
               key="write_letter"
@@ -377,20 +512,10 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.3 }}
-              className="max-w-3xl mx-auto px-4"
             >
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-xl font-serif-title text-white">Write a Love Letter</h2>
-                <button
-                  onClick={() => setActiveSpace("home")}
-                  className="px-3 py-1.5 rounded-xl bg-white/10 text-xs text-white/70 hover:text-white"
-                >
-                  Close Editor
-                </button>
-              </div>
               <AdminEditor
+                userEmail={user.email || ""}
                 userId={user.uid}
-                userEmail={user.email || "backupe9@gmail.com"}
                 onPublished={() => setActiveSpace("love")}
               />
             </motion.div>
@@ -398,26 +523,45 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
         </AnimatePresence>
       </main>
 
-      {/* LETTER READER MODAL IF SELECTED */}
+      {/* Letter Reader Modal */}
+      {selectedLetter && (
+        <LetterReader
+          letter={selectedLetter}
+          onClose={() => setSelectedLetter(null)}
+          currentUserId={user.uid}
+        />
+      )}
+
+      {/* Signature Experience: Daily Magical Welcome Modal */}
       <AnimatePresence>
-        {selectedLetter && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-            <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto custom-scrollbar relative">
-              <button
-                onClick={() => setSelectedLetter(null)}
-                className="absolute top-4 right-4 z-50 p-2 text-white/60 hover:text-white bg-black/50 rounded-full"
-              >
-                <X className="w-5 h-5" />
-              </button>
-              <LetterReader
-                letter={selectedLetter}
-                onClose={() => setSelectedLetter(null)}
-                currentUserId={user.uid}
-                currentUserName={displayName}
-                canReply={true}
-              />
-            </div>
-          </div>
+        {showDailyWelcome && dailyMessage && (
+          <DailyWelcomeModal
+            userId={user.uid}
+            userRole={effectiveRole}
+            dailyMessage={dailyMessage}
+            dailySelection={dailySelection}
+            onClose={() => {
+              setShowDailyWelcome(false);
+              setIsDailyDeferred(true);
+            }}
+            onExploreApp={() => {
+              setShowDailyWelcome(false);
+              setIsDailyDeferred(false);
+            }}
+            onSaveToMemoryBook={() => {
+              setActiveSpace("memory_book");
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Interactive First-Time Onboarding Modal */}
+      <AnimatePresence>
+        {showOnboarding && (
+          <OnboardingModal
+            userId={user.uid}
+            onClose={() => setShowOnboarding(false)}
+          />
         )}
       </AnimatePresence>
     </div>

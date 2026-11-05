@@ -16,6 +16,7 @@ import {
   X
 } from "lucide-react";
 import GlassPanel from "./GlassPanel";
+import FeatureHeader from "./help/FeatureHeader";
 import {
   DreamBoardItem,
   FutureLetter,
@@ -58,7 +59,7 @@ const ANNIVERSARY_QUESTIONS = [
 ];
 
 export default function OurFuture({ currentProfile, partnerProfile }: OurFutureProps) {
-  const [activeTab, setActiveTab] = useState<"dreams" | "capsule" | "dates" | "traditions" | "letters">("dreams");
+  const [activeTab, setActiveTab] = useState<"dreams" | "capsule" | "dates" | "traditions" | "calendar" | "achievements" | "letters">("dreams");
 
   const currentUserId = currentProfile?.uid || "guest";
   const currentUserRole = currentProfile?.role || "reader";
@@ -327,8 +328,10 @@ export default function OurFuture({ currentProfile, partnerProfile }: OurFutureP
       <div className="flex overflow-x-auto gap-2 pb-2 custom-scrollbar">
         {[
           { id: "dreams", label: "Shared Dream Board", icon: Sparkles },
+          { id: "calendar", label: "Traditions Calendar", icon: Calendar },
+          { id: "achievements", label: "Our Achievements", icon: CheckCircle },
           { id: "capsule", label: "Marriage Time Capsule", icon: Lock },
-          { id: "dates", label: "Date Planner", icon: Calendar },
+          { id: "dates", label: "Date Planner", icon: Trees },
           { id: "traditions", label: "Our Traditions", icon: Coffee },
           { id: "letters", label: "Future Letters", icon: Clock }
         ].map(tab => {
@@ -519,6 +522,101 @@ export default function OurFuture({ currentProfile, partnerProfile }: OurFutureP
                 <p className="text-white/65 text-xs font-light leading-relaxed">{trad.description}</p>
               </GlassPanel>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAB: TRADITIONS CALENDAR & MILESTONES */}
+      {activeTab === "calendar" && (
+        <div className="space-y-6 animate-fadeIn">
+          <div className="space-y-1">
+            <h3 className="text-xl font-serif-title font-light text-white">Our Traditions & Milestones Calendar</h3>
+            <p className="text-xs text-white/50">Recurring anniversaries, planned dates, and annual sacred occasions.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <GlassPanel className="p-5 rounded-2xl border-white/10 space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                <span className="font-mono text-xs text-rose-300 font-bold">October 25 (Annual)</span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-rose-500/20 text-rose-300">Anniversary</span>
+              </div>
+              <h4 className="font-serif text-base text-white font-medium">Our Wedding Anniversary & Vows Night</h4>
+              <p className="text-xs text-stone-300 font-serif italic">
+                Unseal last year's Marriage Time Capsule, answer the 6 annual marriage questions, and recommit our hearts together.
+              </p>
+            </GlassPanel>
+
+            <GlassPanel className="p-5 rounded-2xl border-white/10 space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                <span className="font-mono text-xs text-amber-300 font-bold">April 08 (Annual)</span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-500/20 text-amber-300">Sacred Date</span>
+              </div>
+              <h4 className="font-serif text-base text-white font-medium">Project Cupid Access Code Day</h4>
+              <p className="text-xs text-stone-300 font-serif italic">
+                The sacred beginning commemorated every time we unlock our private sanctuary.
+              </p>
+            </GlassPanel>
+
+            <GlassPanel className="p-5 rounded-2xl border-white/10 space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                <span className="font-mono text-xs text-emerald-300 font-bold">September 15 (Annual)</span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-300">Birthday</span>
+              </div>
+              <h4 className="font-serif text-base text-white font-medium">Razia's Birthday</h4>
+              <p className="text-xs text-stone-300 font-serif italic">
+                Celebrating the queen of my heart with special surprises and gratitude for her life.
+              </p>
+            </GlassPanel>
+
+            <GlassPanel className="p-5 rounded-2xl border-white/10 space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                <span className="font-mono text-xs text-purple-300 font-bold">Weekly (Friday)</span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-purple-500/20 text-purple-300">Tradition</span>
+              </div>
+              <h4 className="font-serif text-base text-white font-medium">Friday Evening Decompression & Chai</h4>
+              <p className="text-xs text-stone-300 font-serif italic">
+                No phones, warm tea, gentle lighting, and catching up on our hearts after a busy work week.
+              </p>
+            </GlassPanel>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: OUR LITTLE ACHIEVEMENTS */}
+      {activeTab === "achievements" && (
+        <div className="space-y-6 animate-fadeIn">
+          <div className="space-y-1">
+            <h3 className="text-xl font-serif-title font-light text-white">Our Little Achievements</h3>
+            <p className="text-xs text-white/50">Celebrating small and big milestones we accomplished as a team.</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <GlassPanel className="p-5 rounded-2xl border-emerald-500/30 bg-emerald-950/10 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-lg">🏡</span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-300">Completed</span>
+              </div>
+              <h4 className="font-serif text-base text-white font-medium">Built Our Sacred Sanctuary</h4>
+              <p className="text-xs text-stone-300 font-serif italic">Launched Project Cupid 4.0 as our eternal digital world.</p>
+            </GlassPanel>
+
+            <GlassPanel className="p-5 rounded-2xl border-emerald-500/30 bg-emerald-950/10 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-lg">💌</span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-300">Completed</span>
+              </div>
+              <h4 className="font-serif text-base text-white font-medium">50+ Secret Messages Sealed</h4>
+              <p className="text-xs text-stone-300 font-serif italic">Filled our Little Message Boxes with laughter, love, and inside jokes.</p>
+            </GlassPanel>
+
+            <GlassPanel className="p-5 rounded-2xl border-amber-500/30 bg-amber-950/10 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-lg">✈️</span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-500/20 text-amber-300">In Progress</span>
+              </div>
+              <h4 className="font-serif text-base text-white font-medium">Our Next Escape Goal</h4>
+              <p className="text-xs text-stone-300 font-serif italic">Saving for our special anniversary trip together.</p>
+            </GlassPanel>
           </div>
         </div>
       )}

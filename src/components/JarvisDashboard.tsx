@@ -126,7 +126,7 @@ export const JarvisDashboard: React.FC = () => {
                 </span>
               </div>
               <p className="text-sm text-stone-600 mt-1">
-                Bi-directional bridge connecting Mohammed's personal AI assistant to Project Cupid.
+                Bi-directional bridge connecting Raaziq's personal AI assistant to Project Cupid.
               </p>
             </div>
           </div>

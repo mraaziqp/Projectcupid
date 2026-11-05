@@ -148,6 +148,7 @@ export default function HerWellbeing({
   const [dailySleep, setDailySleep] = useState(4);
   const [dailyMoodNotes, setDailyMoodNotes] = useState("");
   const [moodSavedToast, setMoodSavedToast] = useState(false);
+  const [madhhabRef, setMadhhabRef] = useState<"general" | "hanafi" | "shafii">("general");
 
   // Hydration state
   const [waterGlasses, setWaterGlasses] = useState(4);
@@ -524,15 +525,57 @@ export default function HerWellbeing({
 
           {/* CYCLE PHASES WITH ISLAMIC SPIRITUAL COMFORT (Hayd & Tuhr) */}
           <div className="space-y-3">
-            <h3 className="text-base font-serif-title font-light text-white/90">Cycle Phases & Spiritual Comfort</h3>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <h3 className="text-base font-serif-title font-light text-white/90">Cycle Phases & Spiritual Comfort</h3>
+              
+              {/* Madhhab Educational Reference Selector */}
+              <div className="flex items-center gap-1.5 bg-white/5 p-1 rounded-xl border border-white/10 text-xs">
+                <span className="text-[10px] text-stone-400 font-mono px-1">Fiqh Ref:</span>
+                <button
+                  type="button"
+                  onClick={() => setMadhhabRef("general")}
+                  className={`px-2 py-0.5 rounded-lg text-[10px] font-serif transition ${
+                    madhhabRef === "general" ? "bg-rose-500/30 text-rose-200 border border-rose-500/40" : "text-stone-400 hover:text-white"
+                  }`}
+                >
+                  General
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMadhhabRef("hanafi")}
+                  className={`px-2 py-0.5 rounded-lg text-[10px] font-serif transition ${
+                    madhhabRef === "hanafi" ? "bg-amber-500/30 text-amber-200 border border-amber-500/40" : "text-stone-400 hover:text-white"
+                  }`}
+                >
+                  Hanafi
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMadhhabRef("shafii")}
+                  className={`px-2 py-0.5 rounded-lg text-[10px] font-serif transition ${
+                    madhhabRef === "shafii" ? "bg-emerald-500/30 text-emerald-200 border border-emerald-500/40" : "text-stone-400 hover:text-white"
+                  }`}
+                >
+                  Shafi'i
+                </button>
+              </div>
+            </div>
+
+            {/* Educational Disclaimer Banner */}
+            <div className="p-3 bg-amber-950/20 border border-amber-400/20 rounded-xl text-[11px] text-amber-200/90 leading-relaxed font-sans">
+              ℹ️ <strong>Educational Perspective:</strong> Classical fiqh rulings on Hayd (menstruation), Tuhr (purity), and Istihadah (irregular bleeding) differ by madhhab and depend on your unique habit (Aadah). This companion provides general educational reference and does not substitute for personal consultation with a qualified, trusted scholar or teacher.
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <GlassPanel className="p-4 rounded-2xl border border-rose-500/20 bg-rose-950/10 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium text-rose-300 font-serif">Menstrual Phase (Hayd / حيض)</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-200">Days 1 - 6</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-200">
+                    {madhhabRef === "hanafi" ? "3 – 10 Days (Hanafi)" : madhhabRef === "shafii" ? "1 – 15 Days (Shafi'i)" : "Approx Days 1 – 6"}
+                  </span>
                 </div>
                 <p className="text-xs text-white/70 font-light leading-relaxed">
-                  Your body is resting and clearing. Salah and fasting are exempted as a divine mercy from Allah. Focus on hydration, warmth, and gentle Dhikr.
+                  Your body is resting and clearing. Ritual prayers and fasting are exempted as a divine mercy from Allah. Focus on physical rest, hydration, warmth, and gentle Dhikr.
                 </p>
                 <div className="pt-2 text-[11px] text-rose-200/80 italic border-t border-rose-500/10">
                   "Hasbiyallahu la ilaha illa Huwa, 'alayhi tawakkaltu wa Huwa Rabbul-'Arshil-'Adheem."
@@ -542,10 +585,12 @@ export default function HerWellbeing({
               <GlassPanel className="p-4 rounded-2xl border border-emerald-500/20 bg-emerald-950/10 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium text-emerald-300 font-serif">Follicular & Ovulatory (Tuhr / طهر)</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-200">Days 7 - 16</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-200">
+                    {madhhabRef === "hanafi" ? "Min 15 Days Tuhr" : madhhabRef === "shafii" ? "Min 15 Days Tuhr" : "Days 7 – 16"}
+                  </span>
                 </div>
                 <p className="text-xs text-white/70 font-light leading-relaxed">
-                  Energy rises and peaks! Wonderful time for full prayers, creative projects, outdoor walks in Cape Town, and spiritual renewal.
+                  Energy rises and peaks! Following Ghusl, ritual prayers and Quran recitation resume with renewed vitality, creative energy, and spiritual closeness.
                 </p>
                 <div className="pt-2 text-[11px] text-emerald-200/80 italic border-t border-emerald-500/10">
                   "Rabbana atina fid-dunya hasanatan wa fil-akhirati hasanatan wa qina 'adhaban-nar."

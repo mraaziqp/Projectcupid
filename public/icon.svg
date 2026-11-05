@@ -1,6 +1,47 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <rect width="100" height="100" fill="#0f172a"/>
-  <path d="M50 80C50 80 20 60 20 35C20 20 35 15 45 25L50 30L55 25C65 15 80 20 80 35C80 60 50 80 50 80Z" fill="#ec4899">
-    <animate attributeName="opacity" values="0.8;1;0.8" dur="3s" repeatCount="indefinite" />
-  </path>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#241320"/>
+      <stop offset="70%" stop-color="#120c14"/>
+      <stop offset="100%" stop-color="#08060a"/>
+    </radialGradient>
+    <linearGradient id="goldFiligree" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff2a3"/>
+      <stop offset="50%" stop-color="#d4af37"/>
+      <stop offset="100%" stop-color="#8a6d1b"/>
+    </linearGradient>
+    <radialGradient id="waxGrad" cx="40%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#df385b"/>
+      <stop offset="60%" stop-color="#9b1b36"/>
+      <stop offset="100%" stop-color="#540a1a"/>
+    </radialGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="16" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Dark Enchanted Canvas -->
+  <rect width="512" height="512" rx="110" fill="url(#bgGrad)"/>
+  <rect width="496" height="496" x="8" y="8" rx="102" fill="none" stroke="url(#goldFiligree)" stroke-width="3" stroke-opacity="0.45"/>
+
+  <!-- Subtle Twinkling Stars -->
+  <path d="M90 120 L95 125 L90 130 L85 125 Z" fill="#ffd700" opacity="0.6"/>
+  <path d="M420 110 L425 115 L420 120 L415 115 Z" fill="#ffd700" opacity="0.7"/>
+  <path d="M120 400 L124 404 L120 408 L116 404 Z" fill="#ffd700" opacity="0.5"/>
+  <path d="M390 380 L395 385 L390 390 L385 385 Z" fill="#ffd700" opacity="0.65"/>
+
+  <!-- Outer Golden Halo -->
+  <circle cx="256" cy="256" r="165" fill="#f43f5e" opacity="0.12" filter="url(#glow)"/>
+
+  <!-- Scalloped Wax Seal -->
+  <circle cx="256" cy="256" r="150" fill="url(#waxGrad)" stroke="#c23150" stroke-width="4"/>
+  <circle cx="256" cy="256" r="136" fill="none" stroke="#f68da2" stroke-width="2" stroke-dasharray="6,4" opacity="0.6"/>
+
+  <!-- Golden Stamped Sacred Heart Motif -->
+  <path d="M256 360 C256 360 148 285 148 200 C148 152 186 130 226 150 C242 158 256 172 256 172 C256 172 270 158 286 150 C326 130 364 152 364 200 C364 285 256 360 256 360 Z" fill="#ffd700" filter="url(#glow)"/>
+
+  <!-- R&R Monogram Engraved -->
+  <text x="256" y="235" font-family="Georgia, serif" font-size="34" font-weight="bold" fill="#781428" text-anchor="middle" letter-spacing="2">R&amp;R</text>
+  <text x="256" y="260" font-family="sans-serif" font-size="13" font-weight="bold" fill="#781428" text-anchor="middle" letter-spacing="4">FOREVER</text>
 </svg>

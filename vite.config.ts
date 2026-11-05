@@ -14,18 +14,18 @@ export default defineConfig(({ mode }) => {
         registerType: 'autoUpdate',
         includeAssets: ['icon.svg'],
         manifest: {
-          name: 'Project Cupid',
-          short_name: 'Cupid',
-          description: 'A private vault for Razia and Mohammed.',
-          theme_color: '#0f172a',
-          background_color: '#0f172a',
+          name: 'Project Cupid — Our Little Universe',
+          short_name: 'Project Cupid',
+          description: 'A private marriage and women wellbeing companion for Raaziq and Razia.',
+          theme_color: '#0d0b10',
+          background_color: '#0d0b10',
           display: 'standalone',
           icons: [
             {
               src: 'icon.svg',
               sizes: 'any',
               type: 'image/svg+xml',
-              purpose: 'any'
+              purpose: 'any maskable'
             }
           ]
         }

@@ -105,8 +105,8 @@ export default function AdminDashboard({ user, profile }: { user: User; profile:
 
       // Keep notification failures non-blocking so successful edits still complete.
       try {
-        const isMohammed = user.email === "mraaziqp@gmail.com" || user.email === "backupe9@gmail.com";
-        const senderName = isMohammed ? "Your Husband" : "Your Wife";
+        const isRaaziq = user.email === "mraaziqp@gmail.com" || user.email === "backupe9@gmail.com";
+        const senderName = isRaaziq ? "Your Husband" : "Your Wife";
         await notifyPartner(
           user.uid,
           "A letter was updated.",
