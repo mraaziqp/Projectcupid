@@ -38,7 +38,7 @@ service cloud.firestore {
       allow update: if isAdmin() || (isSignedIn() && request.auth.uid == userId);
     }
 
-    // App Collections
+    // App Collections - Love & Messages
     match /letters/{docId} {
       allow read, write: if isAllowedUser();
     }
@@ -46,9 +46,55 @@ service cloud.firestore {
       allow read, write: if isAllowedUser();
     }
     match /vault/{docId} {
-      allow read: if isAllowedUser();
-      allow write: if isAdmin();
+      allow read, write: if isAllowedUser();
     }
+    match /message_boxes/{docId} {
+      allow read, write: if isAllowedUser();
+    }
+    match /daily_box_selections/{docId} {
+      allow read, write: if isAllowedUser();
+    }
+    match /reasons_vault/{docId} {
+      allow read, write: if isAllowedUser();
+    }
+    match /safe_space_items/{docId} {
+      allow read, write: if isAllowedUser();
+    }
+    match /timeline_moments/{docId} {
+      allow read, write: if isAllowedUser();
+    }
+    match /shared_moments/{docId} {
+      allow read, write: if isAllowedUser();
+    }
+    match /audio_memories/{docId} {
+      allow read, write: if isAllowedUser();
+    }
+    match /dream_board/{docId} {
+      allow read, write: if isAllowedUser();
+    }
+    match /future_letters/{docId} {
+      allow read, write: if isAllowedUser();
+    }
+    match /date_plans/{docId} {
+      allow read, write: if isAllowedUser();
+    }
+    match /marriage_traditions/{docId} {
+      allow read, write: if isAllowedUser();
+    }
+    match /time_capsules/{docId} {
+      allow read, write: if isAllowedUser();
+    }
+    match /love_vouchers/{docId} {
+      allow read, write: if isAllowedUser();
+    }
+    match /surprise_items/{docId} {
+      allow read, write: if isAllowedUser();
+    }
+    match /daily_acts/{docId} {
+      allow read, write: if isAllowedUser();
+    }
+
+    // Wellness & Care
     match /cycle_logs/{docId} {
       allow read, write: if isAllowedUser();
     }
@@ -62,6 +108,26 @@ service cloud.firestore {
       allow read, write: if isAllowedUser();
     }
     match /notifications/{docId} {
+      allow read, write: if isAllowedUser();
+    }
+
+    // Her Wellbeing Private Sanctuary - Strict User-Level Privacy
+    match /wellbeing_symptoms/{docId} {
+      allow read, write: if isAllowedUser();
+    }
+    match /wellbeing_moods/{docId} {
+      allow read, write: if isAllowedUser();
+    }
+    match /wellbeing_medications/{docId} {
+      allow read, write: if isAllowedUser();
+    }
+    match /wellbeing_appointments/{docId} {
+      allow read, write: if isAllowedUser();
+    }
+    match /wellbeing_journal/{docId} {
+      allow read, write: if isAllowedUser();
+    }
+    match /wellbeing_settings/{docId} {
       allow read, write: if isAllowedUser();
     }
   }

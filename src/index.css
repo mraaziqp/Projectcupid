@@ -1,38 +1,73 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "Georgia", serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-serif: "Playfair Display", "Cormorant Garamond", "Georgia", serif;
+  --color-ivory: #faf8f5;
+  --color-cream: #f4efe6;
+  --color-dusty-rose: #d69898;
+  --color-sage: #8ea399;
+  --color-champagne: #d4af37;
 }
 
 @layer base {
   body {
-    @apply bg-[#020205] text-white antialiased selection:bg-pink-500/30;
+    @apply bg-[#060608] text-white antialiased selection:bg-rose-500/30 overflow-x-hidden;
   }
 }
 
+/* Elegant Paper & Romantic Component Styling */
+.font-serif-title {
+  font-family: var(--font-serif);
+}
+
+.paper-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.gold-border {
+  border-color: rgba(223, 194, 152, 0.3);
+}
+
+.gold-glow {
+  box-shadow: 0 0 20px rgba(223, 194, 152, 0.18);
+}
+
+.rose-glow {
+  box-shadow: 0 0 24px rgba(244, 63, 94, 0.2);
+}
+
 .markdown-body {
-  @apply space-y-6 leading-relaxed text-white/80;
+  @apply space-y-6 leading-relaxed text-white/85;
   font-family: var(--font-serif);
 }
 
 .markdown-body h1, .markdown-body h2, .markdown-body h3 {
-  @apply text-white font-light italic mb-4 tracking-tight;
+  @apply text-white font-normal tracking-tight;
 }
 
 .markdown-body p {
-  @apply text-xl;
+  @apply text-lg md:text-xl font-light;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
+  width: 5px;
+  height: 5px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  @apply bg-transparent;
+  background: transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  @apply bg-white/10 rounded-full hover:bg-white/20;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
 }
 
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}

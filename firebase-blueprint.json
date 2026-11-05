@@ -9,148 +9,219 @@
         "email": { "type": "string" },
         "role": { "type": "string", "enum": ["admin", "reader"] },
         "photoURL": { "type": "string" },
-        "displayName": { "type": "string" }
+        "displayName": { "type": "string" },
+        "fcmToken": { "type": "string" }
       },
       "required": ["uid", "email", "role"]
     },
     "Letter": {
       "title": "Letter",
-      "description": "Daily love letters.",
+      "description": "Love letters between partners.",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
         "title": { "type": "string" },
-        "content": { "type": "string", "description": "Markdown content of the letter." },
+        "content": { "type": "string" },
         "publishDate": { "type": "string", "format": "date-time" },
         "isPublished": { "type": "boolean" },
         "isFavorite": { "type": "boolean" },
-        "isRead": { "type": "boolean", "description": "Whether the recipient has seen the letter." },
+        "isRead": { "type": "boolean" },
         "authorId": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "auroraColors": { 
-          "type": "array", 
-          "items": { "type": "string" },
-          "description": "Specific hex codes for the aurora background for this letter."
-        }
-      },
-      "required": ["title", "content", "publishDate", "isPublished", "authorId"]
-    },
-    "VaultItem": {
-      "title": "Vault Item",
-      "description": "Open When... situation-specific letters.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "condition": { "type": "string", "description": "The 'Open when...' trigger." },
-        "content": { "type": "string", "description": "Markdown content." },
-        "isOpened": { "type": "boolean" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "icon": { "type": "string", "description": "Lucide icon name." }
-      },
-      "required": ["condition", "content", "createdAt"]
-    },
-    "CycleLog": {
-      "title": "Cycle Log",
-      "description": "Period and wellness tracking.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "userId": { "type": "string" },
-        "startDate": { "type": "string", "format": "date-time" },
-        "duration": { "type": "number", "description": "Average cycle length in days." },
-        "symptoms": { "type": "array", "items": { "type": "string" } },
-        "updatedAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["userId", "startDate"]
-    },
-    "EmotionalWeather": {
-      "title": "Emotional Weather",
-      "description": "Daily emotional check-ins.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "userId": { "type": "string" },
-        "date": { "type": "string", "format": "date" },
-        "socialBattery": { "type": "number", "minimum": 0, "maximum": 100 },
-        "emotion": { "type": "string" },
-        "note": { "type": "string" },
-        "updatedAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["userId", "date", "socialBattery", "emotion"]
-    },
-    "UsDrop": {
-      "title": "Us Drop",
-      "description": "Collaborative shared notes and links.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "userId": { "type": "string" },
-        "type": { "type": "string", "enum": ["note", "link", "media"] },
-        "content": { "type": "string" },
+        "authorRole": { "type": "string" },
+        "recipientRole": { "type": "string" },
         "category": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["userId", "type", "content", "category"]
+      "required": ["title", "content", "publishDate", "isPublished", "authorId"]
     },
-    "CareQuest": {
-      "title": "Care Quest",
-      "description": "Requests for care or cravings from Razia.",
+    "MessageBox": {
+      "title": "Message Box",
+      "description": "Our Little Message Boxes for daily surprises and notes.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorRole": { "type": "string" },
+        "category": { "type": "string" },
+        "isAnonymous": { "type": "boolean" },
+        "isSecret": { "type": "boolean" },
+        "isOpened": { "type": "boolean" },
+        "isFavorite": { "type": "boolean" },
+        "cycleNumber": { "type": "number" },
+        "scheduledDate": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["content", "authorId", "category", "isOpened"]
+    },
+    "DailyBoxSelection": {
+      "title": "Daily Box Selection",
+      "description": "Consistent atomic daily selected message box.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "date": { "type": "string" },
+        "messageId": { "type": "string" },
+        "secondMessageId": { "type": "string" },
+        "isOpened": { "type": "boolean" },
+        "selectedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["date", "messageId", "isOpened"]
+    },
+    "ReasonVault": {
+      "title": "365 Reason Vault Item",
+      "description": "Daily reasons why we appreciate and love each other.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "dayNumber": { "type": "number" },
+        "text": { "type": "string" },
+        "author": { "type": "string" },
+        "authorId": { "type": "string" },
+        "isFavorite": { "type": "boolean" }
+      },
+      "required": ["dayNumber", "text", "author"]
+    },
+    "TimelineMoment": {
+      "title": "Timeline Moment",
+      "description": "Our Story relationship milestone.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "date": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "category": { "type": "string" }
+      },
+      "required": ["date", "title", "description"]
+    },
+    "DreamBoard": {
+      "title": "Dream Board Item",
+      "description": "Shared dreams, goals, and dreams that cost nothing.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "isCostNothing": { "type": "boolean" },
+        "progress": { "type": "number" },
+        "isCompleted": { "type": "boolean" }
+      },
+      "required": ["title", "category"]
+    },
+    "DatePlan": {
+      "title": "Date Plan",
+      "description": "Date ideas and planner.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "isCompleted": { "type": "boolean" }
+      },
+      "required": ["title", "category"]
+    },
+    "LoveVoucher": {
+      "title": "Love Voucher",
+      "description": "Digital redeemable love voucher.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "creatorId": { "type": "string" },
+        "isRedeemed": { "type": "boolean" }
+      },
+      "required": ["title", "creatorId", "isRedeemed"]
+    },
+    "TimeCapsule": {
+      "title": "Time Capsule",
+      "description": "Annual marriage anniversary reflections sealed in time.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "yearNumber": { "type": "number" },
+        "title": { "type": "string" },
+        "anniversaryDate": { "type": "string" },
+        "isSealed": { "type": "boolean" },
+        "unlockDate": { "type": "string" }
+      },
+      "required": ["yearNumber", "title", "anniversaryDate", "isSealed"]
+    },
+    "WellbeingSymptom": {
+      "title": "Wellbeing Symptom",
+      "description": "Private symptom log (physical and emotional).",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
         "userId": { "type": "string" },
-        "craving": { "type": "string" },
-        "status": { "type": "string", "enum": ["pending", "fulfilled"] },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "date": { "type": "string" },
+        "category": { "type": "string" },
+        "symptomName": { "type": "string" },
+        "severity": { "type": "number" }
       },
-      "required": ["userId", "craving", "status", "createdAt"]
+      "required": ["userId", "date", "category", "symptomName", "severity"]
     },
-    "Notification": {
-      "title": "Notification",
-      "description": "Real-time notifications for letters and quests.",
+    "WellbeingMood": {
+      "title": "Wellbeing Mood",
+      "description": "Private daily mood and energy log.",
       "type": "object",
       "properties": {
+        "id": { "type": "string" },
         "userId": { "type": "string" },
-        "title": { "type": "string" },
-        "body": { "type": "string" },
-        "read": { "type": "boolean" },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "date": { "type": "string" },
+        "moodScore": { "type": "number" },
+        "energyLevel": { "type": "number" }
       },
-      "required": ["userId", "title", "body", "read", "createdAt"]
+      "required": ["userId", "date", "moodScore"]
+    },
+    "WellbeingMedication": {
+      "title": "Wellbeing Medication",
+      "description": "Private medication and supplement tracker.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "dosage": { "type": "string" },
+        "frequency": { "type": "string" }
+      },
+      "required": ["userId", "name", "dosage"]
+    },
+    "WellbeingAppointment": {
+      "title": "Wellbeing Appointment",
+      "description": "Private doctor appointment notes and question preparation.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "appointmentDate": { "type": "string" },
+        "providerName": { "type": "string" },
+        "specialty": { "type": "string" }
+      },
+      "required": ["userId", "appointmentDate", "providerName"]
     }
   },
   "firestore": {
-    "users": {
-      "schema": "User",
-      "description": "User profiles and roles."
-    },
-    "letters": {
-      "schema": "Letter",
-      "description": "Main collection for daily letters."
-    },
-    "vault": {
-      "schema": "VaultItem",
-      "description": "Collection for Open When letters."
-    },
-    "cycle_logs": {
-      "schema": "CycleLog",
-      "description": "Logs for period tracking."
-    },
-    "weather": {
-      "schema": "EmotionalWeather",
-      "description": "Daily emotional weather logs."
-    },
-    "us_drops": {
-      "schema": "UsDrop",
-      "description": "Shared board for links and notes."
-    },
-    "care_quests": {
-      "schema": "CareQuest",
-      "description": "Requests from Razia for specific care."
-    },
-    "notifications": {
-      "schema": "Notification",
-      "description": "Real-time notification logs."
-    }
+    "users": { "schema": "User" },
+    "letters": { "schema": "Letter" },
+    "message_boxes": { "schema": "MessageBox" },
+    "daily_box_selections": { "schema": "DailyBoxSelection" },
+    "reasons_vault": { "schema": "ReasonVault" },
+    "timeline_moments": { "schema": "TimelineMoment" },
+    "dream_board": { "schema": "DreamBoard" },
+    "date_plans": { "schema": "DatePlan" },
+    "love_vouchers": { "schema": "LoveVoucher" },
+    "time_capsules": { "schema": "TimeCapsule" },
+    "cycle_logs": { "schema": "CycleLog" },
+    "wellbeing_symptoms": { "schema": "WellbeingSymptom" },
+    "wellbeing_moods": { "schema": "WellbeingMood" },
+    "wellbeing_medications": { "schema": "WellbeingMedication" },
+    "wellbeing_appointments": { "schema": "WellbeingAppointment" }
   }
 }
