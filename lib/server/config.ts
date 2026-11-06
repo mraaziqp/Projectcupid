@@ -46,7 +46,7 @@ export const env = {
   get ollamaModel() { return str("OLLAMA_MODEL") || "llama3"; },
 
   /** Encrypts SaveState session tokens held for each member. 32+ random bytes, hex or base64. */
-  get sessionSecret() { return str("CUPID_SESSION_SECRET"); },
+  get sessionSecret() { return str("CUPID_SESSION_SECRET") || str("ENCRYPTION_SECRET"); },
 
   get savestateUrl() { return (str("SAVESTATE_URL") || "https://savestate.co.za").replace(/\/$/, ""); },
   /** PIN on the SaveState album that holds Cupid's own photos. */
