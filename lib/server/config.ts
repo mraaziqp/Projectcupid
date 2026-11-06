@@ -23,7 +23,6 @@ export type MemberRole = (typeof MEMBER_ROLES)[number];
  */
 export const BOOTSTRAP_MEMBERS: Record<string, { role: MemberRole; displayName: string }> = {
   "mraaziqp@gmail.com": { role: "admin", displayName: "Raaziq" },
-  "backupe9@gmail.com": { role: "admin", displayName: "Raaziq" },
   "raziashade4@gmail.com": { role: "sanctuary_owner", displayName: "Razia" },
 };
 

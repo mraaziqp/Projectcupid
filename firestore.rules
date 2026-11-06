@@ -26,7 +26,7 @@ service cloud.firestore {
     }
     function allowlistedRole(r) {
       return verifiedEmail() && (
-        (r == 'admin' && request.auth.token.email in ['mraaziqp@gmail.com', 'backupe9@gmail.com']) ||
+        (r == 'admin' && request.auth.token.email == 'mraaziqp@gmail.com') ||
         (r == 'sanctuary_owner' && request.auth.token.email == 'raziashade4@gmail.com')
       );
     }

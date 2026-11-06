@@ -96,12 +96,91 @@ export async function fixRoles(dryRun: boolean) {
   return { dryRun, changes };
 }
 
+/** Fields that are bookkeeping, not ownership: left as a record of what happened. */
+const NOT_OWNERSHIP = new Set(["jarvis_audit_logs", "jarvis_events", "notificationLogs", "ecosystem_log", "users", "identity_links"]);
+const RETIRING = { from: "backupe9@gmail.com", to: "mraaziqp@gmail.com" };
+
+function swapUid(value: any, from: string, to: string): { value: any; changed: boolean } {
+  if (value === from) return { value: to, changed: true };
+  if (Array.isArray(value)) {
+    let changed = false;
+    const out = value.map((v) => { const r = swapUid(v, from, to); changed ||= r.changed; return r.value; });
+    return { value: out, changed };
+  }
+  if (value && typeof value === "object" && Object.getPrototypeOf(value) === Object.prototype) {
+    let changed = false;
+    const out: Record<string, any> = {};
+    for (const [k, v] of Object.entries(value)) { const r = swapUid(v, from, to); changed ||= r.changed; out[k] = r.value; }
+    return { value: out, changed };
+  }
+  return { value, changed: false };
+}
+
+/**
+ * Moves everything owned by Raaziq's old account to his main one, then retires
+ * the old account. Only ever these two fixed accounts. Nothing is deleted: a
+ * record is re-owned, or left in place and reported if the new owner already
+ * has one with the same id. Safe to run again.
+ */
+export async function transferAccount(dryRun: boolean) {
+  const db = adminDb();
+  const auth = adminAuth();
+  const [fromUser, toUser] = await Promise.all([auth.getUserByEmail(RETIRING.from), auth.getUserByEmail(RETIRING.to)]);
+  const from = fromUser.uid, to = toUser.uid;
+  const fromRef = db.collection("users").doc(from), toRef = db.collection("users").doc(to);
+  const [fromSnap, toSnap] = await Promise.all([fromRef.get(), toRef.get()]);
+  if (!toSnap.exists || toSnap.get("role") !== "admin") {
+    return { dryRun, error: `${RETIRING.to} must already be an admin; nothing was changed.` };
+  }
+
+  const collections = await db.listCollections();
+  const moved: Record<string, number> = {};
+  const conflicts: string[] = [];
+  for (const coll of collections) {
+    if (NOT_OWNERSHIP.has(coll.id)) continue;
+    const snap = await coll.get();
+    for (const d of snap.docs) {
+      const r = swapUid(d.data(), from, to);
+      // Old unread alerts would otherwise all pop up at once on the main account.
+      if (coll.id === "notifications" && r.changed) r.value.read = true;
+      const newId = d.id.split(from).join(to);
+      if (!r.changed && newId === d.id) continue;
+      if (newId !== d.id) {
+        const target = coll.doc(newId);
+        if ((await target.get()).exists) { conflicts.push(`${coll.id}/${newId}`); continue; }
+        if (!dryRun) {
+          const batch = db.batch();
+          batch.set(target, r.value);
+          batch.delete(d.ref);
+          await batch.commit();
+        }
+      } else if (!dryRun) {
+        await d.ref.set(r.value);
+      }
+      moved[coll.id] = (moved[coll.id] ?? 0) + 1;
+    }
+  }
+
+  const retire = fromSnap.exists && fromSnap.get("role") !== "retired";
+  if (!dryRun) {
+    const keep: Record<string, any> = {};
+    for (const k of ["fcmToken", "emailNotifications", "notificationPrefs"]) {
+      if (toSnap.get(k) === undefined && fromSnap.get(k) !== undefined) keep[k] = fromSnap.get(k);
+    }
+    if (Object.keys(keep).length) await toRef.set(keep, { merge: true });
+    if (retire) {
+      await fromRef.set({ role: "retired", roleBefore: fromSnap.get("role") ?? null, retiredAt: FieldValue.serverTimestamp(), movedTo: to, fcmToken: FieldValue.delete() }, { merge: true });
+    }
+    void logEvent({ kind: "system", summary: `account transfer: ${Object.values(moved).reduce((a, b) => a + b, 0)} records moved` });
+  }
+  return { dryRun, from: RETIRING.from, to: RETIRING.to, moved, conflicts, retiresOldAccount: retire };
+}
+
 export async function carryOver(dryRun: boolean) {
   const db = adminDb();
   const members = (await db.collection("users").where("role", "in", [...MEMBER_ROLES]).get()).docs;
   const her = members.find((d) => d.get("role") === "sanctuary_owner")?.id;
-  const him = members.find((d) => d.get("role") === "admin" && d.get("email") === "backupe9@gmail.com")?.id
-    ?? members.find((d) => d.get("role") === "admin")?.id;
+  const him = members.find((d) => d.get("role") === "admin")?.id;
   if (!him) return { dryRun, error: "No admin member profile yet; run the role fix first.", created: 0, existing: 0 };
 
   const ownerFor = (s: DocumentSnapshot) => {

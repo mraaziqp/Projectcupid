@@ -17,7 +17,8 @@ import {
   BookOpen,
   Shield,
   HelpCircle,
-  Flower2
+  Flower2,
+  Mail
 } from "lucide-react";
 import { User as FirebaseUser } from "firebase/auth";
 import { UserProfile, MessageBoxItem, DailyBoxSelection } from "../types";
@@ -72,6 +73,7 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
   const [isPreviewingPartner, setIsPreviewingPartner] = useState(false);
   const [selectedLetter, setSelectedLetter] = useState<any | null>(null);
   const [gardenMemoryId, setGardenMemoryId] = useState<string | null>(null);
+  const [adminTab, setAdminTab] = useState<"jarvis" | undefined>(undefined);
 
   // Daily Welcome & Onboarding State
   const [showDailyWelcome, setShowDailyWelcome] = useState(false);
@@ -237,7 +239,7 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
             {/* Admin Command Centre Shortcut for Raaziq */}
             {profile?.role === "admin" && (
               <button
-                onClick={() => setActiveSpace("admin_centre")}
+                onClick={() => { setAdminTab(undefined); setActiveSpace("admin_centre"); }}
                 className={`p-2 sm:px-3 py-1.5 rounded-xl border text-xs font-serif transition-all flex items-center gap-1.5 ${
                   activeSpace === "admin_centre"
                     ? "bg-rose-500/30 text-rose-200 border-rose-500/50 shadow-sm"
@@ -337,7 +339,10 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
                     <button onClick={() => openSpace("write_letter")} className="p-3.5 rounded-2xl border bg-white/5 border-white/10 text-white/85 text-left flex items-center gap-2.5">
                       <Edit3 className="w-5 h-5 shrink-0 text-amber-300" /><span className="text-sm">Write a Letter</span>
                     </button>
-                    <button onClick={() => openSpace("admin_centre")} className="p-3.5 rounded-2xl border bg-white/5 border-white/10 text-white/85 text-left flex items-center gap-2.5">
+                    <button onClick={() => { setAdminTab("jarvis"); openSpace("admin_centre"); }} className="p-3.5 rounded-2xl border bg-white/5 border-white/10 text-white/85 text-left flex items-center gap-2.5">
+                      <Mail className="w-5 h-5 shrink-0 text-rose-300" /><span className="text-sm">Connections & Email</span>
+                    </button>
+                    <button onClick={() => { setAdminTab(undefined); openSpace("admin_centre"); }} className="p-3.5 rounded-2xl border bg-white/5 border-white/10 text-white/85 text-left flex items-center gap-2.5">
                       <Shield className="w-5 h-5 shrink-0 text-rose-300" /><span className="text-sm">Command Centre</span>
                     </button>
                   </>
@@ -558,6 +563,8 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
                 partnerProfile={partnerProfile}
                 onNavigateHome={() => setActiveSpace("home")}
                 onReplayOnboarding={() => setShowOnboarding(true)}
+                initialTab={adminTab}
+                key={adminTab ?? "overview"}
               />
             </motion.div>
           )}

@@ -1,9 +1,9 @@
 /**
  * Sending mail.
  *
- * 1. SaveState's mail system, as the sender's own SaveState account
- *    (POST savestate.co.za/api/notify/send → SaveState's verified Resend domain).
- * 2. Cupid's own Resend key, if one is configured.
+ * 1. Resend directly, with SaveState's key and verified domain, so it arrives
+ *    from "Project Cupid" and replies reach the sender.
+ * 2. SaveState's mail relay, as the sender's own SaveState account, if that fails.
  *
  * The result says exactly what happened; nothing is reported as delivered
  * unless a provider accepted it.
@@ -20,13 +20,13 @@ export interface MailResult {
   id?: string;
 }
 
-export async function sendViaResend(mail: { to: string; subject: string; html: string; text: string }): Promise<{ ok: boolean; detail: string; id?: string }> {
+export async function sendViaResend(mail: { to: string; subject: string; html: string; text: string; replyTo?: string }): Promise<{ ok: boolean; detail: string; id?: string }> {
   if (!env.resendKey) return { ok: false, detail: "RESEND_API_KEY is not set" };
   try {
     const r = await fetchWithTimeout(env.resendApi + "/emails", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${env.resendKey}` },
-      body: JSON.stringify({ from: env.resendFrom, to: [mail.to], subject: mail.subject, html: mail.html, text: mail.text }),
+      body: JSON.stringify({ from: env.resendFrom, to: [mail.to], subject: mail.subject, html: mail.html, text: mail.text, ...(mail.replyTo ? { reply_to: mail.replyTo } : {}) }),
       timeoutMs: 10_000,
     });
     const b: any = await r.json().catch(() => ({}));
@@ -37,8 +37,12 @@ export async function sendViaResend(mail: { to: string; subject: string; html: s
   }
 }
 
-export async function sendMail(senderUid: string, mail: { to: string; subject: string; html: string; text: string; eventType: string }): Promise<MailResult> {
+export async function sendMail(senderUid: string, mail: { to: string; subject: string; html: string; text: string; eventType: string; replyTo?: string }): Promise<MailResult> {
   const attempts: MailResult["attempts"] = [];
+
+  const direct = await sendViaResend(mail);
+  attempts.push({ via: "resend", ok: direct.ok, detail: direct.detail });
+  if (direct.ok) return { ok: true, via: "resend", attempts, id: direct.id };
 
   let token: string | null = null;
   try { token = await saveStateToken(senderUid); } catch (e: any) {
@@ -53,8 +57,5 @@ export async function sendMail(senderUid: string, mail: { to: string; subject: s
       attempts.push({ via: "savestate", ok: false, detail: e?.message ?? "SaveState relay failed" });
     }
   }
-
-  const r = await sendViaResend(mail);
-  attempts.push({ via: "resend", ok: r.ok, detail: r.detail });
-  return r.ok ? { ok: true, via: "resend", attempts, id: r.id } : { ok: false, via: null, attempts };
+  return { ok: false, via: null, attempts };
 }

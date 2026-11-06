@@ -29,6 +29,8 @@ import GlassPanel from "./GlassPanel";
 import { UserProfile, MessageBoxItem, ReasonVaultItem, TimelineMoment, DreamBoardItem, LoveVoucher, TimeCapsule } from "../types";
 import { getMessageBoxes, addMessageBoxContribution, reshuffleMessageBoxes } from "../lib/messageBoxService";
 import { JarvisDashboard } from "./JarvisDashboard";
+import ConnectionsPanel from "./ConnectionsPanel";
+import EmailPartner from "./EmailPartner";
 import { apiFetch } from "../lib/api";
 import { collection as fsCollection, getDocs as fsGetDocs, orderBy as fsOrderBy, limit as fsLimit, query as fsQuery } from "firebase/firestore";
 import { db as fsDb } from "../lib/firebase";
@@ -45,6 +47,7 @@ interface AdminCommandCentreProps {
   partnerProfile?: UserProfile | null;
   onNavigateHome: () => void;
   onReplayOnboarding: () => void;
+  initialTab?: "jarvis";
 }
 
 type AdminTab =
@@ -65,9 +68,10 @@ export default function AdminCommandCentre({
   currentProfile,
   partnerProfile,
   onNavigateHome,
-  onReplayOnboarding
+  onReplayOnboarding,
+  initialTab
 }: AdminCommandCentreProps) {
-  const [activeTab, setActiveTab] = useState<AdminTab>("overview");
+  const [activeTab, setActiveTab] = useState<AdminTab>(initialTab ?? "overview");
   const [searchQuery, setSearchQuery] = useState("");
 
   // System Diagnostics Real State
@@ -181,20 +185,20 @@ export default function AdminCommandCentre({
                   Admin Command Centre
                 </h1>
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono uppercase bg-rose-500/20 text-rose-300 border border-rose-500/40">
-                  v4.0.0
+                  v5.0.0
                 </span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-mono uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
                   Raaziq (Owner)
                 </span>
               </div>
               <p className="text-xs text-stone-400 font-serif italic mt-0.5">
-                Centralized management, content orchestration, and ecosystem diagnostics for Project Cupid.
+                Letters, content and connections.
               </p>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="hidden lg:flex items-center gap-2">
           <button
             onClick={onReplayOnboarding}
             className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-stone-200 text-xs font-serif flex items-center gap-1.5 transition"
@@ -223,6 +227,7 @@ export default function AdminCommandCentre({
       )}
 
       {/* Strict Privacy Wall Notice for Admin */}
+      {activeTab === "overview" && (
       <div className="p-4 rounded-2xl bg-amber-950/30 border border-amber-500/30 text-amber-200 text-xs flex items-start gap-3 shadow-sm">
         <Lock className="w-5 h-5 text-amber-400 mt-0.5 flex-shrink-0" />
         <div className="space-y-1">
@@ -235,6 +240,7 @@ export default function AdminCommandCentre({
           </p>
         </div>
       </div>
+      )}
 
       {/* Command Navigation Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-white/10">
@@ -248,6 +254,18 @@ export default function AdminCommandCentre({
         >
           <Activity className="w-3.5 h-3.5" />
           <span>Overview & Health</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("jarvis")}
+          className={`px-3.5 py-2 rounded-xl text-xs font-medium transition flex items-center gap-1.5 whitespace-nowrap ${
+            activeTab === "jarvis"
+              ? "bg-amber-500/20 text-amber-200 border border-amber-500/40"
+              : "text-stone-400 hover:text-white hover:bg-white/5"
+          }`}
+        >
+          <Bot className="w-3.5 h-3.5 text-amber-400" />
+          <span>Connections & Email</span>
         </button>
 
         <button
@@ -298,17 +316,6 @@ export default function AdminCommandCentre({
           <span>Email & Resend</span>
         </button>
 
-        <button
-          onClick={() => setActiveTab("jarvis")}
-          className={`px-3.5 py-2 rounded-xl text-xs font-medium transition flex items-center gap-1.5 whitespace-nowrap ${
-            activeTab === "jarvis"
-              ? "bg-amber-500/20 text-amber-200 border border-amber-500/40"
-              : "text-stone-400 hover:text-white hover:bg-white/5"
-          }`}
-        >
-          <Bot className="w-3.5 h-3.5 text-amber-400" />
-          <span>Jarvis Bridge</span>
-        </button>
 
         <button
           onClick={() => setActiveTab("memory_book")}
@@ -604,7 +611,13 @@ export default function AdminCommandCentre({
       )}
 
       {/* TAB 4: JARVIS ECOSYSTEM */}
-      {activeTab === "jarvis" && <JarvisDashboard isAdmin />}
+      {activeTab === "jarvis" && (
+        <div className="space-y-6">
+          <EmailPartner partnerName={partnerProfile?.displayName || "Razia"} partnerEmail={partnerProfile?.email} />
+          <ConnectionsPanel />
+          <JarvisDashboard isAdmin />
+        </div>
+      )}
 
       {/* TAB 5: OUR STORY & TIMELINE */}
       {activeTab === "content_timeline" && (

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { collection, getDocs, limit, orderBy, query, where } from "firebase/firestore";
-import { Bot, CheckCircle, XCircle, RefreshCw, Activity, Shield, Sparkles, Link2, Stethoscope, Check, X } from "lucide-react";
+import { Bot, RefreshCw, Activity, Shield, Sparkles, Link2, Check, X } from "lucide-react";
 import GlassPanel from "./GlassPanel";
 import { db, auth } from "../lib/firebase";
 import { apiFetch } from "../lib/api";
@@ -16,7 +16,6 @@ interface EcoStatus {
   today: { day: string; events: number; byKind: Record<string, number> };
   tools: Array<{ name: string; description: string; category: string; needsApproval: boolean }>;
 }
-interface Diagnostics { ok: boolean; at: string; checks: Record<string, { ok: boolean; detail: string }> }
 
 const when = (t?: number) => (t ? new Date(t).toLocaleString() : "never");
 
@@ -28,8 +27,6 @@ export const JarvisDashboard: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = fal
   const [status, setStatus] = useState<EcoStatus | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [diag, setDiag] = useState<Diagnostics | null>(null);
-  const [diagBusy, setDiagBusy] = useState(false);
   const [logs, setLogs] = useState<any[]>([]);
   const [proposals, setProposals] = useState<any[]>([]);
   const [note, setNote] = useState("");
@@ -64,13 +61,6 @@ export const JarvisDashboard: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = fal
     finally { setBusy(false); }
   };
 
-  const runDiagnostics = async () => {
-    setDiagBusy(true);
-    try { setDiag(await apiFetch<Diagnostics>("admin/diagnostics")); }
-    catch (e: any) { setNote(e?.message ?? "Diagnostics failed."); }
-    finally { setDiagBusy(false); }
-  };
-
   const decide = async (id: string, approve: boolean) => {
     try {
       await apiFetch("jarvis/proposals/decide", { body: { id, approve } });
@@ -85,8 +75,8 @@ export const JarvisDashboard: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = fal
           <div className="flex items-start gap-4">
             <div className="p-3 bg-stone-900 text-rose-300 rounded-2xl border border-rose-400/30"><Bot className="w-7 h-7" /></div>
             <div>
-              <h3 className="text-xl font-serif text-white">Connections</h3>
-              <p className="text-sm text-white/60 max-w-xl">How Project Cupid talks to Jarvis and SaveState. Jarvis sees only shared memories and activity counts — never letters' text, private memories or wellbeing data.</p>
+              <h3 className="text-xl font-serif text-white">Jarvis</h3>
+              <p className="text-sm text-white/60 max-w-xl">How Project Cupid talks to Jarvis. Jarvis sees only shared memories and activity counts — never letters' text, private memories or wellbeing data.</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -151,26 +141,6 @@ export const JarvisDashboard: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = fal
               </div>
             ))}
           </div>
-        </GlassPanel>
-      )}
-
-      {isAdmin && (
-        <GlassPanel className="p-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <h4 className="text-white font-medium flex items-center gap-2"><Stethoscope className="w-4 h-4 text-sky-300" /> Live credential checks</h4>
-            <button onClick={runDiagnostics} disabled={diagBusy} className="px-3 py-1.5 rounded-lg bg-white/10 text-xs text-white disabled:opacity-50">{diagBusy ? "Checking…" : "Run checks"}</button>
-          </div>
-          <p className="text-[11px] text-white/50">Each key is tested against its real service from the server. Values are never shown.</p>
-          {diag && (
-            <ul className="text-xs space-y-1">
-              {Object.entries(diag.checks).map(([k, c]) => (
-                <li key={k} className="flex items-start gap-2 text-white/75">
-                  {c.ok ? <CheckCircle className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" /> : <XCircle className="w-3.5 h-3.5 text-rose-400 mt-0.5 shrink-0" />}
-                  <span><span className="font-mono text-white/90">{k}</span> — {c.detail}</span>
-                </li>
-              ))}
-            </ul>
-          )}
         </GlassPanel>
       )}
 

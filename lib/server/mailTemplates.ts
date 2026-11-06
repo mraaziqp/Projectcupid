@@ -10,6 +10,7 @@ const THEMES = {
   nudge: { icon: "🧸", band: "#db2777", accent: "#db2777", kicker: "A little nudge" },
   feeling: { icon: "✨", band: "#7e22ce", accent: "#7e22ce", kicker: "How I'm feeling" },
   memory: { icon: "🌿", band: "#4d5b3a", accent: "#6b7a4f", kicker: "A new memory in our garden" },
+  note: { icon: "🤍", band: "#9f1239", accent: "#be185d", kicker: "A note for you" },
   general: { icon: "💝", band: "#be123c", accent: "#be123c", kicker: "From Project Cupid" },
 } as const;
 export type MailTheme = keyof typeof THEMES;

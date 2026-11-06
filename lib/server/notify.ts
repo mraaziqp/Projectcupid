@@ -10,7 +10,7 @@ import { renderMail, type MailTheme } from "./mailTemplates.js";
 import { sendMail } from "./mail.js";
 import { logEvent } from "./ecosystem.js";
 
-export const NOTIFY_KINDS = ["letter", "letter_reply", "nudge", "feeling", "memory", "message_box", "surprise", "general", "wellbeing"] as const;
+export const NOTIFY_KINDS = ["letter", "letter_reply", "nudge", "feeling", "memory", "message_box", "surprise", "general", "wellbeing", "note"] as const;
 export type NotifyKind = (typeof NOTIFY_KINDS)[number];
 
 /** Kinds that may never leave Cupid by email (they can carry wellbeing context). */
@@ -19,7 +19,7 @@ const HOURLY_LIMIT = 40;
 
 const THEME: Record<NotifyKind, MailTheme> = {
   letter: "letter", letter_reply: "letter", nudge: "nudge", feeling: "feeling", memory: "memory",
-  message_box: "general", surprise: "general", general: "general", wellbeing: "general",
+  message_box: "general", surprise: "general", general: "general", wellbeing: "general", note: "note",
 };
 
 const firstName = (m: { displayName: string; role: string }) =>
@@ -104,7 +104,7 @@ export async function notifyPartner(sender: Member, n: NotifyRequest) {
       if (!to || !r.emailNotifications || seen.has(to)) { email.skipped++; continue; }
       seen.add(to);
       const m = renderMail({ theme: THEME[n.kind], title: n.title, body: n.emailBody || n.body, senderName, recipientName: firstName(r) });
-      const res = await sendMail(sender.uid, { to, ...m, eventType: n.kind });
+      const res = await sendMail(sender.uid, { to, ...m, eventType: n.kind, replyTo: me.email || undefined });
       if (res.ok) { email.sent++; email.via.push(res.via!); } else email.failed++;
       email.detail.push(...res.attempts.map((a) => `${a.via}: ${a.detail}`));
     }

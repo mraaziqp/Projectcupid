@@ -153,14 +153,15 @@ async function main() {
   });
 
   section("Notifications and mail");
-  await test("a letter notifies the partner and emails her through SaveState, escaped", async () => {
+  await test("a letter notifies the partner and emails her, escaped, with replies to the sender", async () => {
     SS.state.mails.length = 0;
     const r = await api("notify", { as: "raaziq", body: { kind: "letter", title: "For you <script>alert(1)</script>", body: "Open me", emailBody: "Dear Razia\n\nYou are <b>loved</b>" } });
-    eq(r.status, 200); eq(r.data.email.sent, 1); eq(r.data.email.via, ["savestate"]);
-    eq(SS.state.mails.length, 1);
-    eq(SS.state.mails[0].to_email, RAZIA.email);
-    assert(!SS.state.mails[0].html.includes("<script>"), "html is escaped");
-    assert(SS.state.mails[0].html.includes("&lt;b&gt;loved&lt;/b&gt;"), "body escaped");
+    eq(r.status, 200); eq(r.data.email.sent, 1); eq(r.data.email.via, ["resend"]);
+    const sent = RESEND.state.sent[RESEND.state.sent.length - 1];
+    eq(sent.to, [RAZIA.email]);
+    eq(sent.reply_to, RAAZIQ.email);
+    assert(!sent.html.includes("<script>"), "html is escaped");
+    assert(sent.html.includes("&lt;b&gt;loved&lt;/b&gt;"), "body escaped");
     const n = await db.collection("notifications").where("userId", "==", RAZIA.uid).get();
     eq(n.size, 1);
   });
@@ -168,11 +169,11 @@ async function main() {
     const r = await api("notify", { as: "raaziq", body: { kind: "general", title: "x", body: "y", recipientEmail: "attacker@example.com" } });
     eq(r.status, 400);
   });
-  await test("when SaveState mail is down, Resend is used instead", async () => {
-    SS.state.mailWorks = false; RESEND.state.sent.length = 0;
+  await test("when Resend fails, SaveState's relay sends it instead", async () => {
+    RESEND.state.works = false; SS.state.mails.length = 0;
     const r = await api("notify", { as: "raaziq", body: { kind: "nudge", title: "Thinking of you", body: "x" } });
-    SS.state.mailWorks = true;
-    eq(r.data.email.via, ["resend"]); eq(RESEND.state.sent.length, 1);
+    RESEND.state.works = true;
+    eq(r.data.email.via, ["savestate"]); eq(SS.state.mails.length, 1); eq(SS.state.mails[0].to_email, RAZIA.email);
   });
   await test("when every channel fails the answer says so", async () => {
     SS.state.mailWorks = false; RESEND.state.works = false;
@@ -463,6 +464,50 @@ async function main() {
     const text = JSON.stringify(r.data);
     for (const v of Object.values(SECRETS)) assert(!text.includes(v), "a secret value appeared in diagnostics");
     eq(r.data.checks.resend.ok, true); eq(r.data.checks.gemini.ok, true); eq(r.data.checks.jarvis.ok, true); eq(r.data.checks.weddingapp.ok, true);
+  });
+
+  section("Moving Raaziq's old account to his main one");
+  await test("a note to the partner is emailed, by the server's choice of address", async () => {
+    RESEND.state.sent.length = 0;
+    const r = await api("notify", { as: "raaziq", body: { kind: "note", title: "Hello love", body: "short", emailBody: "The whole note" } });
+    eq(r.data.email.sent, 1); eq(RESEND.state.sent[0].to, [RAZIA.email]); assert(RESEND.state.sent[0].text.includes("The whole note"), "full text sent");
+  });
+  await test("only an admin can move accounts", async () => eq((await api("admin/transfer-account", { as: "razia", body: {} })).status, 403));
+  await db.doc(`letters/old_letter`).set({ title: "Old", content: "x", isPublished: true, authorId: RAAZIQ.uid, createdAt: new Date() });
+  await db.doc(`weather/${RAAZIQ.uid}-2026-01-01`).set({ userId: RAAZIQ.uid, date: "2026-01-01", emotion: "Calm" });
+  await db.doc("memories/old_memory").set({ ownerId: RAAZIQ.uid, visibility: "shared", title: "Old", caption: "", memoryDate: "2026-01-01", datePrecision: "day", mediaType: "text", media: [], tags: [], collectionIds: [], favouritedBy: [RAAZIQ.uid, RAZIA.uid], isSpecialOccasion: false, status: "organised", source: "cupid", provenance: { importedBy: RAAZIQ.uid } });
+  await db.doc("letters/hers").set({ title: "Hers", content: "x", isPublished: true, authorId: RAZIA.uid });
+  const beforeLetters = (await db.collection("letters").get()).size;
+  await test("a dry run reports the move and changes nothing", async () => {
+    const r = await api("admin/transfer-account", { as: "raaziq", body: {} });
+    eq(r.data.dryRun, true); assert(r.data.moved.letters >= 1, "letters counted");
+    eq((await db.doc("letters/old_letter").get()).get("authorId"), RAAZIQ.uid);
+  });
+  await test("everything moves to the main account and nothing is lost", async () => {
+    const r = await api("admin/transfer-account", { as: "raaziq", body: { dryRun: false } });
+    eq(r.data.dryRun, false); eq(r.data.retiresOldAccount, true);
+    eq((await db.doc("letters/old_letter").get()).get("authorId"), "raaziq_old");
+    eq((await db.doc("letters/hers").get()).get("authorId"), RAZIA.uid);
+    eq((await db.collection("letters").get()).size, beforeLetters);
+    eq((await db.doc(`weather/${RAAZIQ.uid}-2026-01-01`).get()).exists, false);
+    eq((await db.doc("weather/raaziq_old-2026-01-01").get()).get("userId"), "raaziq_old");
+    const m = await db.doc("memories/old_memory").get();
+    eq(m.get("ownerId"), "raaziq_old"); eq(m.get("favouritedBy"), ["raaziq_old", RAZIA.uid]); eq(m.get("provenance.importedBy"), "raaziq_old");
+  });
+  await test("the old account no longer has access", async () => {
+    eq((await db.doc(`users/${RAAZIQ.uid}`).get()).get("role"), "retired");
+    eq((await api("ecosystem/status", { as: "raaziq" })).status, 403);
+  });
+  await test("the main account still works, and Razia's mail now names only it", async () => {
+    tokens.main = await idTokenFor("raaziq_old");
+    eq((await api("ecosystem/status", { as: "main" })).status, 200);
+    RESEND.state.sent.length = 0;
+    const r = await api("notify", { as: "razia", body: { kind: "note", title: "Hi", body: "x" } });
+    eq(r.data.email.sent, 1); eq(RESEND.state.sent[0].to, ["mraaziqp@gmail.com"]);
+  });
+  await test("running it again changes nothing", async () => {
+    const r = await api("admin/transfer-account", { as: "main", body: { dryRun: false } });
+    eq(r.data.moved, {}); eq(r.data.retiresOldAccount, false);
   });
 
   server.close();

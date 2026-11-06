@@ -25,7 +25,7 @@ import {
 import { decideProposal, executeTool, JARVIS_TOOLS } from "./jarvisTools.js";
 import { acceptBridgeEntry } from "./bridge.js";
 import { runDiagnostics } from "./diagnostics.js";
-import { audit, carryOver, fixRoles } from "./migration.js";
+import { audit, carryOver, fixRoles, transferAccount } from "./migration.js";
 import { cronSync, logEvent, shareMemoryKnowledge } from "./ecosystem.js";
 import type { MemorySource } from "../../src/lib/memoryGarden/model.js";
 
@@ -276,6 +276,10 @@ const cronOrAdmin = async (req: ApiRequest) => {
 };
 on("GET", "admin/diagnostics", async ({ req }) => { await cronOrAdmin(req); return runDiagnostics(); });
 on("GET", "admin/data-audit", async ({ req }) => { await cronOrAdmin(req); return audit(); });
+on("POST", "admin/transfer-account", async ({ req, body }) => {
+  await cronOrAdmin(req);
+  return transferAccount((await body()).dryRun !== false);
+});
 on("POST", "admin/migrate", async ({ req, body }) => {
   await cronOrAdmin(req);
   const b = await body();

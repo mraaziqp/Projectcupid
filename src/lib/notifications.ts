@@ -5,7 +5,7 @@
  */
 import { apiFetch } from "./api";
 
-export type NotifyKind = "letter" | "letter_reply" | "nudge" | "feeling" | "memory" | "message_box" | "surprise" | "general" | "wellbeing";
+export type NotifyKind = "letter" | "letter_reply" | "nudge" | "feeling" | "memory" | "message_box" | "surprise" | "general" | "wellbeing" | "note";
 
 export interface NotifyResult {
   inApp: number;

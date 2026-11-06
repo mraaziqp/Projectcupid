@@ -749,7 +749,7 @@ export default function OurLove({
               </button>
               <AdminEditor
                 userId={currentUserId}
-                userEmail={currentProfile?.email || "backupe9@gmail.com"}
+                userEmail={currentProfile?.email || ""}
                 onPublished={() => {
                   setShowWriteModal(false);
                   showToast("Love letter published to library!");

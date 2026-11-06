@@ -12,7 +12,6 @@ export type { UserProfile, UserRole };
  */
 const BOOTSTRAP: Record<string, { role: UserRole; displayName: string }> = {
   "mraaziqp@gmail.com": { role: "admin", displayName: "Raaziq" },
-  "backupe9@gmail.com": { role: "admin", displayName: "Raaziq" },
   "raziashade4@gmail.com": { role: "sanctuary_owner", displayName: "Razia" },
 };
 

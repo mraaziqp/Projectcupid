@@ -4,7 +4,7 @@
  * value (or any part of one) is ever included.
  */
 import { adminAuth, adminDb, adminMessaging, adminStatus } from "./firebaseAdmin.js";
-import { env, FIRESTORE_DATABASE_ID } from "./config.js";
+import { env, FIRESTORE_DATABASE_ID, MEMBER_ROLES } from "./config.js";
 import { fetchWithTimeout } from "./http.js";
 import { gemini } from "./ai.js";
 import * as ss from "./savestate.js";
@@ -98,6 +98,19 @@ export async function runDiagnostics() {
   checks.vapid_key = present((process.env.VITE_FIREBASE_VAPID_KEY ?? "").trim(), 80);
   checks.savestate_links = { ok: true, detail: `${Object.keys(env.savestateLinks).length} pre-approved link(s)` };
 
+  let people: Array<Record<string, unknown>> = [];
+  if (adminStatus().ready) {
+    const users = await adminDb().collection("users").where("role", "in", [...MEMBER_ROLES]).get().catch(() => null);
+    people = await Promise.all((users?.docs ?? []).map(async (d) => {
+      const secret = await adminDb().collection("integration_secrets").doc(d.id).get().catch(() => null);
+      return {
+        name: d.get("displayName") ?? "", email: d.get("email") ?? "", role: d.get("role"),
+        savestateLinked: !!secret?.get("savestate.token") && !secret?.get("savestate.needsSignIn"),
+        pushOn: !!d.get("fcmToken"), emailOn: d.get("emailNotifications") !== false,
+      };
+    }));
+  }
+
   const ok = Object.values(checks).every((c) => c.ok);
-  return { ok, at: new Date().toISOString(), checks };
+  return { ok, at: new Date().toISOString(), checks, people };
 }

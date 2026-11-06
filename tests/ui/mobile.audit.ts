@@ -198,6 +198,14 @@ async function main() {
         await shoot(page, `${vp.name}-05-save`);
         await page.getByRole("button", { name: "Close" }).first().click();
       } catch (e: any) { console.log(`  garden flow: ${String(e.message).split("\n")[0]}`); }
+      try {
+        await page.locator("[data-testid=menu-toggle]").click();
+        await page.waitForTimeout(350);
+        await page.locator("[data-testid=mobile-menu] button", { hasText: "Connections & Email" }).click();
+        await page.waitForTimeout(6000);
+        await shoot(page, `${vp.name}-10-connections`);
+      } catch (e: any) { console.log(`  connections: ${String(e.message).split(String.fromCharCode(10))[0]}`); }
+
       // The screens that open on top of others.
       const overlay = async (label: string, open: () => Promise<void>) => {
         try {
@@ -212,7 +220,7 @@ async function main() {
       await overlay("write-letter", async () => { await page.getByRole("button", { name: /Write a Love Letter/ }).first().click(); await page.waitForTimeout(400); });
       await page.reload({ waitUntil: "domcontentloaded" }); await page.waitForSelector("[data-testid=menu-toggle]", { timeout: 45000 }); await page.waitForTimeout(1200);
       await go(page, "Our Love"); await page.waitForTimeout(700);
-      await overlay("letter-reader", async () => { await page.getByText("Tap to read letter").first().click(); await page.waitForTimeout(1200); });
+      await overlay("letter-reader", async () => { await page.getByText("Letter 1: for the quiet moments").first().click(); await page.waitForTimeout(1200); });
       await page.reload({ waitUntil: "domcontentloaded" }); await page.waitForSelector("[data-testid=menu-toggle]", { timeout: 45000 }); await page.waitForTimeout(1200);
       await go(page, "Message Boxes"); await page.waitForTimeout(700);
       await overlay("drop-message", async () => { await page.getByRole("button", { name: /Drop a Message/ }).first().click(); await page.waitForTimeout(400); });
