@@ -22,7 +22,7 @@ export default function LetterCard({ letter, onClick, index }: { letter: Letter;
         <div className="flex justify-between items-start gap-3">
           <div className="space-y-1 flex-1 min-w-0">
             <p className="text-[9px] md:text-[10px] uppercase tracking-[0.2em] text-pink-400 font-bold">
-              Daily Aurora • {format(date, "MMM do")}
+              {format(date, "MMM do")}
             </p>
             <h3 className="text-lg md:text-2xl lg:text-3xl font-light italic font-serif text-white/90 leading-tight group-hover:text-pink-100 transition-colors break-words">
               {letter.title}

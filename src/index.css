@@ -120,3 +120,93 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(223, 194, 152, 0.4);
 }
+
+/* ── Mobile and accessibility foundations (5.0) ──────────────────────────── */
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  scroll-padding-bottom: 6rem;
+}
+
+button, [role="button"], a, label, summary, select, input[type="checkbox"], input[type="range"] {
+  touch-action: manipulation;
+}
+
+:focus-visible {
+  outline: 2px solid #dfc298;
+  outline-offset: 2px;
+}
+
+/* Faint text that was hard to read anywhere, on any screen. */
+.text-white\/20, .text-white\/25, .text-white\/30, .text-white\/35, .text-white\/40 {
+  color: rgb(255 255 255 / 0.62);
+}
+.text-neutral-500, .text-stone-500 {
+  color: #a8a29e;
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Phones and tablets */
+@media (max-width: 1023px) {
+  /* iOS zooms the page when a field under 16px is focused. */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea {
+    font-size: 16px !important;
+  }
+  /* Nothing is smaller than 11px. */
+  [class*="text-[8px]"], [class*="text-[9px]"], [class*="text-[10px]"], [class*="text-[10.5px]"] {
+    font-size: 0.6875rem !important;
+    line-height: 1.35;
+  }
+  .overflow-x-auto {
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+  .overflow-x-auto::-webkit-scrollbar {
+    display: none;
+  }
+  .markdown-body p {
+    font-size: 1.0625rem;
+  }
+}
+
+/* Fingers, not mice */
+@media (pointer: coarse) {
+  button, [role="button"], select, summary,
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]) {
+    min-height: 44px;
+  }
+  /* Icon-only buttons need width too. Not all buttons: a min-width on a flex item
+     switches off its "never shrink below my content" default, and rows collapse. */
+  button:has(> svg:only-child), [role="button"]:has(> svg:only-child) {
+    min-width: 44px;
+  }
+  .overflow-x-auto > * {
+    flex-shrink: 0;
+  }
+  input[type="checkbox"], input[type="radio"] {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+  }
+  input[type="range"] {
+    height: 32px;
+  }
+  /* Hover effects stick after a tap on touch screens. */
+  .storybook-card:hover {
+    border-color: rgba(223, 194, 152, 0.18);
+    box-shadow: 0 10px 35px -5px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -45,6 +45,7 @@ export const FeatureHeader: React.FC<FeatureHeaderProps> = ({
             {helpDetails && (
               <button
                 onClick={() => setShowHelp(!showHelp)}
+                aria-label="How this space works"
                 className="p-1 rounded-full text-white/40 hover:text-white/80 hover:bg-white/5 transition"
                 title="How this space works"
               >
@@ -55,7 +56,7 @@ export const FeatureHeader: React.FC<FeatureHeaderProps> = ({
           <p className="text-xs sm:text-sm text-rose-200/80 font-serif italic">
             {subtitle}
           </p>
-          <p className="text-xs text-white/60 mt-1 max-w-2xl leading-relaxed">
+          <p className="hidden sm:block text-xs text-white/60 mt-1 max-w-2xl leading-relaxed">
             {description}
           </p>
         </div>

@@ -46,7 +46,7 @@ export default function InstallPrompt() {
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
-          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-2rem)] max-w-sm"
+          className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] lg:bottom-8 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-2rem)] max-w-sm"
         >
           <GlassPanel className="p-4 border-pink-500/30 bg-pink-500/10 backdrop-blur-xl flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">

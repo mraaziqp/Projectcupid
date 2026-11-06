@@ -31,6 +31,11 @@ export default function SaveMomentModal({ onClose, onSaved, savestateLinked }: {
   const stream = useRef<MediaStream | null>(null);
 
   useEffect(() => () => { stream.current?.getTracks().forEach((t) => t.stop()); }, []);
+  useEffect(() => {
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previous; };
+  }, []);
 
   const pick = async (f: File | undefined, kind: UploadKind) => {
     if (!f) return;
@@ -103,17 +108,17 @@ export default function SaveMomentModal({ onClose, onSaved, savestateLinked }: {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true" aria-label="Save this moment">
-      <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="w-full sm:max-w-lg max-h-[92vh] overflow-y-auto bg-[#f7f0e1] text-[#3e3326] rounded-t-3xl sm:rounded-3xl shadow-2xl border border-[#e2d4b6]">
-        <div className="sticky top-0 bg-[#f7f0e1]/95 backdrop-blur px-5 pt-5 pb-3 flex items-center justify-between border-b border-[#e7dbc1]">
+    <div className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true" aria-label="Save this moment">
+      <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="w-full sm:max-w-lg max-h-[94dvh] overflow-y-auto overscroll-contain bg-[#f7f0e1] text-[#3e3326] rounded-t-3xl sm:rounded-3xl shadow-2xl border border-[#e2d4b6]">
+        <div className="sticky top-0 z-10 bg-[#f7f0e1] px-5 pt-4 pb-3 flex items-center justify-between border-b border-[#e7dbc1]">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.25em] text-[#8a7a5c]">The Memory Garden</p>
-            <h3 className="font-serif text-2xl">Save this moment</h3>
+            
+            <h3 className="font-serif text-xl sm:text-2xl">Save this moment</h3>
           </div>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-black/5" aria-label="Close"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-black/5 flex items-center justify-center" aria-label="Close"><X className="w-5 h-5" /></button>
         </div>
 
-        <div className="p-5 space-y-4">
+        <div className="px-4 sm:px-5 pt-4 space-y-3 sm:space-y-4">
           <div className="grid grid-cols-4 gap-2">
             {tabs.map((t) => {
               const disabled = t.needsMedia && !savestateLinked;
@@ -131,7 +136,7 @@ export default function SaveMomentModal({ onClose, onSaved, savestateLinked }: {
           {mode === "photo" && (
             <label className="block cursor-pointer">
               <input type="file" accept="image/*" capture="environment" className="sr-only" onChange={(e) => pick(e.target.files?.[0], "photo")} />
-              <div className="aspect-[4/3] rounded-2xl border-2 border-dashed border-[#d8c7a4] bg-white/50 flex items-center justify-center overflow-hidden">
+              <div className="aspect-[16/9] sm:aspect-[4/3] rounded-2xl border-2 border-dashed border-[#d8c7a4] bg-white/50 flex items-center justify-center overflow-hidden">
                 {preparing ? <Loader2 className="w-6 h-6 animate-spin text-[#8a7a5c]" /> : file?.preview ? <img src={file.preview} alt="" className="w-full h-full object-cover" /> : <span className="text-sm text-[#8a7a5c] flex items-center gap-2"><Camera className="w-5 h-5" /> Take or choose a photo</span>}
               </div>
             </label>
@@ -158,7 +163,7 @@ export default function SaveMomentModal({ onClose, onSaved, savestateLinked }: {
           )}
 
           <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} placeholder="A title (optional)" className="w-full px-3.5 py-2.5 rounded-xl bg-white/70 border border-[#e2d4b6] font-serif text-lg placeholder:text-[#b3a283] focus:outline-none focus:border-[#b8955a]" />
-          <textarea value={caption} onChange={(e) => setCaption(e.target.value)} maxLength={4000} rows={mode === "write" ? 5 : 2} placeholder={mode === "write" ? "What happened, and why it mattered…" : "A few words (optional)"} className="w-full px-3.5 py-2.5 rounded-xl bg-white/70 border border-[#e2d4b6] font-serif placeholder:text-[#b3a283] focus:outline-none focus:border-[#b8955a]" />
+          <textarea value={caption} onChange={(e) => setCaption(e.target.value)} maxLength={4000} rows={mode === "write" ? 4 : 2} placeholder={mode === "write" ? "What happened, and why it mattered…" : "A few words (optional)"} className="w-full px-3.5 py-2.5 rounded-xl bg-white/70 border border-[#e2d4b6] font-serif placeholder:text-[#b3a283] focus:outline-none focus:border-[#b8955a]" />
 
           <div className="grid grid-cols-2 gap-2">
             <label className="text-[11px] text-[#8a7a5c]">When
@@ -192,10 +197,12 @@ export default function SaveMomentModal({ onClose, onSaved, savestateLinked }: {
 
           {error && <p className="text-sm text-[#8a3f3f] bg-[#c98b8b]/15 border border-[#c98b8b]/40 rounded-xl p-3">{error}</p>}
 
-          <button onClick={save} disabled={busy || preparing || recording} className="w-full py-3.5 rounded-2xl bg-[#b8955a] hover:bg-[#a8854b] text-white font-serif text-lg disabled:opacity-50 flex items-center justify-center gap-2">
+          <p className="text-[11px] text-center text-[#7a6a55]">It goes to your Inbox first. Organising it later is optional.</p>
+        </div>
+        <div className="sticky bottom-0 z-10 bg-[#f7f0e1] px-4 sm:px-5 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] border-t border-[#e7dbc1] mt-3">
+          <button onClick={save} disabled={busy || preparing || recording} className="w-full py-3 rounded-2xl bg-[#b8955a] hover:bg-[#a8854b] text-white font-serif text-lg disabled:opacity-50 flex items-center justify-center gap-2">
             {busy ? <><Loader2 className="w-5 h-5 animate-spin" /> Planting it in the garden…</> : "Keep this moment"}
           </button>
-          <p className="text-[11px] text-center text-[#9a8a70]">It goes to your Inbox first. Organising it later is optional.</p>
         </div>
       </motion.div>
     </div>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { X, Heart, ChevronLeft, ChevronRight, Lock, Users, Trash2, Pencil, Check, Sparkles, FolderHeart, Plus, Bot } from "lucide-react";
 import MediaView from "./MediaView";
@@ -47,6 +47,31 @@ export default function MemoryTheatre({ memory, list, uid, me, partner, collecti
     return () => window.removeEventListener("keydown", onKey);
   }, [idx, list, onClose, onNavigate]);
 
+  // Stay put underneath while a memory is open.
+  useEffect(() => {
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previous; };
+  }, []);
+
+  // Swipe sideways on the picture: next file in this memory, then the next memory.
+  const touch = useRef<{ x: number; y: number } | null>(null);
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const start = touch.current;
+    touch.current = null;
+    if (!start) return;
+    const dx = e.changedTouches[0].clientX - start.x;
+    const dy = e.changedTouches[0].clientY - start.y;
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    if (dx < 0) {
+      if (slide < media.length - 1) setSlide(slide + 1);
+      else if (idx < list.length - 1) onNavigate(list[idx + 1].id);
+    } else {
+      if (slide > 0) setSlide(slide - 1);
+      else if (idx > 0) onNavigate(list[idx - 1].id);
+    }
+  };
+
   const run = async (f: () => Promise<unknown>, ok?: string) => {
     setBusy(true); setMsg(null);
     try { await f(); if (ok) setMsg(ok); } catch (e: any) { setMsg(e?.message ?? "That didn't work."); } finally { setBusy(false); }
@@ -67,16 +92,16 @@ export default function MemoryTheatre({ memory, list, uid, me, partner, collecti
   const media = memory.media;
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#0b0a08]/90 backdrop-blur-md overflow-y-auto" role="dialog" aria-modal="true" aria-label={memory.title}>
+    <div className="fixed inset-0 z-[60] bg-[#0b0a08]/90 backdrop-blur-md overflow-y-auto overscroll-contain" role="dialog" aria-modal="true" aria-label={memory.title}>
       <div className="min-h-full flex items-start sm:items-center justify-center p-0 sm:p-6">
         <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="relative w-full max-w-5xl bg-[#f7f0e1] text-[#3e3326] sm:rounded-3xl overflow-hidden shadow-2xl grid lg:grid-cols-[1.35fr_1fr]">
-          <button onClick={onClose} className="absolute top-3 right-3 z-10 p-2 rounded-full bg-black/40 text-white hover:bg-black/60" aria-label="Close"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} className="fixed sm:absolute top-[calc(0.75rem+env(safe-area-inset-top))] right-3 z-10 p-2.5 rounded-full bg-black/60 text-white hover:bg-black/70 flex items-center justify-center" aria-label="Close"><X className="w-5 h-5" /></button>
 
-          <div className="relative bg-[#1b1712] min-h-[300px] lg:min-h-[560px] flex items-center justify-center">
+          <div onTouchStart={(e) => { touch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }} onTouchEnd={onTouchEnd} className="relative bg-[#1b1712] min-h-[260px] lg:min-h-[560px] flex items-center justify-center">
             {media.length ? (
-              <MediaView memory={memory} index={slide} className="w-full h-full max-h-[75vh]" />
+              <MediaView memory={memory} index={slide} className="w-full h-full max-h-[62dvh] lg:max-h-[75vh]" />
             ) : (
-              <div className="p-10 text-center max-w-md">
+              <div className="px-6 py-14 sm:p-10 text-center max-w-md">
                 <Sparkles className="w-7 h-7 text-[#c9a46a] mx-auto mb-4" />
                 <p className="font-serif italic text-xl text-[#efe3c8] leading-relaxed whitespace-pre-line">{memory.caption || memory.title}</p>
               </div>
@@ -94,11 +119,11 @@ export default function MemoryTheatre({ memory, list, uid, me, partner, collecti
             </div>
           </div>
 
-          <div className="p-6 space-y-5 max-h-none lg:max-h-[86vh] lg:overflow-y-auto">
+          <div className="p-5 sm:p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] space-y-5 max-h-none lg:max-h-[86vh] lg:overflow-y-auto">
             {!editing ? (
               <div className="space-y-2">
                 <p className="text-[11px] uppercase tracking-[0.22em] text-[#8a7a5c]">{formatMemoryDate(memory)}{memory.location ? ` · ${memory.location}` : ""}</p>
-                <h2 className="font-serif text-3xl leading-tight">{memory.title}</h2>
+                <h2 className="font-serif text-2xl sm:text-3xl leading-tight break-words">{memory.title}</h2>
                 {media.length > 0 && memory.caption && <p className="font-serif text-[15px] leading-relaxed text-[#54473a] whitespace-pre-line">{memory.caption}</p>}
                 <div className="flex flex-wrap gap-1.5 pt-1">
                   {memory.tags.map((t) => <span key={t} className="text-[11px] px-2 py-0.5 rounded-full bg-[#e7dcc3] text-[#6b5a43]">#{t}</span>)}
@@ -127,11 +152,11 @@ export default function MemoryTheatre({ memory, list, uid, me, partner, collecti
               <button onClick={() => run(() => toggleFavourite(memory, uid))} className={`px-3 py-1.5 rounded-full text-xs flex items-center gap-1 border ${memory.favouritedBy.includes(uid) ? "bg-[#c98b8b] text-white border-[#c98b8b]" : "bg-white/60 border-[#e2d4b6]"}`}>
                 <Heart className={`w-3.5 h-3.5 ${memory.favouritedBy.includes(uid) ? "fill-white" : ""}`} /> Favourite
               </button>
-              {isOwner && !editing && <button onClick={() => setEditing(true)} className="px-3 py-1.5 rounded-full text-xs bg-white/60 border border-[#e2d4b6] flex items-center gap-1"><Pencil className="w-3.5 h-3.5" /> Edit</button>}
+              {isOwner && !editing && <button onClick={() => setEditing(true)} className="px-3 py-1.5 rounded-full text-xs bg-white/60 border border-[#e2d4b6] flex items-center justify-center gap-1"><Pencil className="w-3.5 h-3.5" /> Edit</button>}
               {isOwner && media.length < 12 && me?.savestate && (
                 <label className="px-3 py-1.5 rounded-full text-xs bg-white/60 border border-[#e2d4b6] flex items-center gap-1 cursor-pointer"><Plus className="w-3.5 h-3.5" /> Photo<input type="file" accept="image/*" className="sr-only" onChange={(e) => addPhoto(e.target.files?.[0])} /></label>
               )}
-              {isOwner && isShared && <button disabled={busy} onClick={() => run(() => apiFetch("memories/share-with-jarvis", { body: { id: memory.id } }), "Jarvis can now remember this with you.")} className="px-3 py-1.5 rounded-full text-xs bg-white/60 border border-[#e2d4b6] flex items-center gap-1"><Bot className="w-3.5 h-3.5" /> Share with Jarvis</button>}
+              {isOwner && isShared && <button disabled={busy} onClick={() => run(() => apiFetch("memories/share-with-jarvis", { body: { id: memory.id } }), "Jarvis can now remember this with you.")} className="px-3 py-1.5 rounded-full text-xs bg-white/60 border border-[#e2d4b6] flex items-center justify-center gap-1"><Bot className="w-3.5 h-3.5" /> Share with Jarvis</button>}
               {isOwner && <button disabled={busy} onClick={() => confirm(memory.source === "cupid" ? "Delete this memory? Its files in Cupid's SaveState album go too." : "Remove this from the garden? The original stays where it came from.") && run(() => deleteMemory(memory.id).then(onClose))} className="px-3 py-1.5 rounded-full text-xs text-[#8a3f3f] bg-white/60 border border-[#e2d4b6] flex items-center gap-1"><Trash2 className="w-3.5 h-3.5" /> {memory.source === "cupid" ? "Delete" : "Remove"}</button>}
             </div>
 
@@ -168,7 +193,7 @@ export default function MemoryTheatre({ memory, list, uid, me, partner, collecti
               <div className="space-y-2 border-t border-[#e7dbc1] pt-4">
                 <div className="flex flex-wrap gap-1.5">
                   {EMOJIS.map((e) => (
-                    <button key={e} onClick={() => run(() => react(memory.id, uid, myReaction?.emoji === e ? "" : e, note))} className={`w-9 h-9 rounded-full text-lg border ${myReaction?.emoji === e ? "bg-[#f0d9d9] border-[#c98b8b]" : "bg-white/60 border-[#e2d4b6]"}`} aria-label={`React ${e}`}>{e}</button>
+                    <button key={e} onClick={() => run(() => react(memory.id, uid, myReaction?.emoji === e ? "" : e, note))} className={`w-11 h-11 rounded-full text-lg border ${myReaction?.emoji === e ? "bg-[#f0d9d9] border-[#c98b8b]" : "bg-white/60 border-[#e2d4b6]"}`} aria-label={`React ${e}`}>{e}</button>
                   ))}
                 </div>
                 <div className="flex gap-2">

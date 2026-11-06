@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Flower2, Plus, Search, Sprout, Inbox, BookHeart, FolderHeart, Gem, Plug, Trash2, Pencil, Lock, Users, Archive, Check } from "lucide-react";
+import { Flower2, Plus, Search, Sprout, Inbox, BookHeart, FolderHeart, Gem, Plug, Trash2, Pencil, Lock, Users, Archive, Check, SlidersHorizontal } from "lucide-react";
 import MemoryCard, { formatMemoryDate, SOURCE_LABEL } from "./MemoryCard";
 import MemoryTheatre from "./MemoryTheatre";
 import SaveMomentModal from "./SaveMomentModal";
@@ -16,7 +16,8 @@ const FILTERS: Array<{ id: Filter; label: string }> = [
   { id: "letter", label: "Letters" }, { id: "booklet", label: "Booklets" }, { id: "favourites", label: "Favourites" }, { id: "special", label: "Special occasions" },
 ];
 const SUGGESTED_COLLECTIONS = ["Our Firsts", "Wedding Memories", "Little Adventures", "Ordinary Days", "Favourite Photographs", "Letters to Each Other", "Special Occasions", "Places We've Been", "Our Future"];
-const tilt = (id: string) => ((id.charCodeAt(0) + id.charCodeAt(id.length - 1)) % 5) - 2;
+// A gentle lean; less on phones, where every pixel of a photo counts.
+const tilt = (id: string) => (((id.charCodeAt(0) + id.charCodeAt(id.length - 1)) % 5) - 2) * (typeof window !== "undefined" && window.innerWidth < 640 ? 0.4 : 1);
 
 export default function MemoryGarden({ currentProfile, partnerProfile, initialMemoryId, onConsumedInitial }: {
   currentProfile: UserProfile | null; partnerProfile?: UserProfile | null; initialMemoryId?: string | null; onConsumedInitial?: () => void;
@@ -35,6 +36,7 @@ export default function MemoryGarden({ currentProfile, partnerProfile, initialMe
   const [activeCollection, setActiveCollection] = useState<string | null>(null);
   const [newCol, setNewCol] = useState({ name: "", visibility: null as null | "shared" | "private" });
   const [colMsg, setColMsg] = useState<string | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => { if (initialMemoryId) { setOpenId(initialMemoryId); onConsumedInitial?.(); } }, [initialMemoryId]);
 
@@ -81,6 +83,8 @@ export default function MemoryGarden({ currentProfile, partnerProfile, initialMe
     { id: "sources", label: "Bring memories in", icon: Plug },
   ];
 
+  const activeFilters = (year !== "all" ? 1 : 0) + (tag !== "all" ? 1 : 0) + (source !== "all" ? 1 : 0);
+
   const addCollection = async (name: string) => {
     if (!newCol.visibility) { setColMsg("Choose shared or private for the collection."); return; }
     if (!name.trim()) return;
@@ -89,17 +93,17 @@ export default function MemoryGarden({ currentProfile, partnerProfile, initialMe
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-16 space-y-6">
-      <header className="relative overflow-hidden rounded-3xl border border-[#e2d4b6]/30 bg-[radial-gradient(ellipse_at_top_left,#2c2a1e,#15120d_70%)] p-6 sm:p-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-8 sm:pb-16 space-y-4 sm:space-y-6">
+      <header className="relative overflow-hidden rounded-3xl border border-[#e2d4b6]/30 bg-[radial-gradient(ellipse_at_top_left,#2c2a1e,#15120d_70%)] px-5 py-4 sm:p-8">
         <div className="absolute -right-10 -top-10 w-56 h-56 rounded-full bg-[#6b7a4f]/20 blur-3xl pointer-events-none" />
         <div className="absolute right-24 bottom-0 w-40 h-40 rounded-full bg-[#c98b8b]/15 blur-3xl pointer-events-none" />
         <div className="relative flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.3em] text-[#c9a46a]">Project Cupid 5.0</p>
-            <h1 className="font-serif text-4xl sm:text-5xl text-[#f3e8cf] tracking-tight">The Memory Garden</h1>
-            <p className="font-serif italic text-[#d9c9a6] mt-1">A living story of us</p>
+            
+            <h1 className="font-serif text-2xl sm:text-5xl text-[#f3e8cf] tracking-tight">The Memory Garden</h1>
+            <p className="font-serif italic text-sm sm:text-base text-[#d9c9a6] sm:mt-1">A living story of us</p>
           </div>
-          <button onClick={() => setSaving(true)} className="self-start sm:self-auto px-5 py-3 rounded-full bg-[#b8955a] hover:bg-[#a8854b] text-white font-serif text-lg shadow-lg flex items-center gap-2">
+          <button onClick={() => setSaving(true)} className="hidden sm:flex self-start sm:self-auto px-5 py-3 rounded-full bg-[#b8955a] hover:bg-[#a8854b] text-white font-serif text-lg shadow-lg items-center gap-2">
             <Plus className="w-5 h-5" /> Save this moment
           </button>
         </div>
@@ -117,15 +121,18 @@ export default function MemoryGarden({ currentProfile, partnerProfile, initialMe
 
       {(tab === "garden" || (tab === "collections" && activeCollection)) && (
         <>
-          <div className="flex flex-col lg:flex-row gap-3 lg:items-center">
-            <div className="relative flex-1">
+          <div className="flex flex-wrap lg:flex-nowrap gap-2 lg:gap-3 lg:items-center">
+            <div className="relative flex-1 min-w-[55%]">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#a8987a]" />
-              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search our memories" className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white placeholder:text-white/30" />
+              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search our memories" className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white placeholder:text-white/50" />
             </div>
-            <div className="flex gap-2 flex-wrap">
-              <select value={year} onChange={(e) => setYear(e.target.value)} className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white" aria-label="Year"><option value="all">Every year</option>{years.map((y) => <option key={y} value={y}>{y}</option>)}</select>
-              <select value={tag} onChange={(e) => setTag(e.target.value)} className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white" aria-label="Tag"><option value="all">Any tag</option>{tags.map((t) => <option key={t} value={t}>#{t}</option>)}</select>
-              <select value={source} onChange={(e) => setSource(e.target.value)} className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white" aria-label="Source"><option value="all">Every source</option>{sources.map((s) => <option key={s} value={s}>{SOURCE_LABEL[s] ?? s}</option>)}</select>
+            <button onClick={() => setShowFilters((v) => !v)} aria-expanded={showFilters} className="lg:hidden self-start px-3 rounded-xl bg-white/5 border border-white/10 text-sm text-white/85 flex items-center gap-2">
+              <SlidersHorizontal className="w-4 h-4" /> Filters{activeFilters ? ` (${activeFilters})` : ""}
+            </button>
+            <div className={`${showFilters ? "grid" : "hidden"} grid-cols-3 lg:flex gap-2`}>
+              <select value={year} onChange={(e) => setYear(e.target.value)} className="min-w-0 px-2 lg:px-3 py-2 rounded-xl bg-[#17141c] border border-white/10 text-xs text-white" aria-label="Year"><option value="all">Every year</option>{years.map((y) => <option key={y} value={y}>{y}</option>)}</select>
+              <select value={tag} onChange={(e) => setTag(e.target.value)} className="min-w-0 px-2 lg:px-3 py-2 rounded-xl bg-[#17141c] border border-white/10 text-xs text-white" aria-label="Tag"><option value="all">Any tag</option>{tags.map((t) => <option key={t} value={t}>#{t}</option>)}</select>
+              <select value={source} onChange={(e) => setSource(e.target.value)} className="min-w-0 px-2 lg:px-3 py-2 rounded-xl bg-[#17141c] border border-white/10 text-xs text-white" aria-label="Source"><option value="all">Every source</option>{sources.map((s) => <option key={s} value={s}>{SOURCE_LABEL[s] ?? s}</option>)}</select>
             </div>
           </div>
           <div className="flex gap-1.5 overflow-x-auto pb-1">
@@ -142,7 +149,7 @@ export default function MemoryGarden({ currentProfile, partnerProfile, initialMe
           ) : filtered.length === 0 ? (
             <Empty onSave={() => setSaving(true)} filtered={visible.length > 0} />
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5 sm:gap-7 pt-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-7 pt-1 sm:pt-2">
               {filtered.map((m) => <MemoryCard key={m.id} memory={m} uid={uid} tilt={tilt(m.id)} onOpen={() => setOpenId(m.id)} />)}
             </div>
           )}
@@ -152,7 +159,7 @@ export default function MemoryGarden({ currentProfile, partnerProfile, initialMe
       {tab === "story" && (
         story.length === 0 ? <Empty onSave={() => setSaving(true)} /> : (
           <div className="space-y-2">
-            <div className="flex gap-1.5 overflow-x-auto pb-2">{years.slice().reverse().map((y) => <a key={y} href={`#story-${y}`} className="px-3 py-1 rounded-full text-xs border border-white/10 text-[#d9c9a6] hover:bg-white/5">{y}</a>)}</div>
+            <div className="flex gap-1.5 overflow-x-auto pb-2">{years.slice().reverse().map((y) => <a key={y} href={`#story-${y}`} className="px-4 py-2.5 rounded-full text-xs border border-white/10 text-[#d9c9a6] hover:bg-white/5">{y}</a>)}</div>
             <ol className="relative border-l-2 border-[#c9a46a]/40 ml-3 space-y-8">
               {story.map(([month, list], i) => {
                 const y = month.slice(0, 4);
@@ -193,10 +200,10 @@ export default function MemoryGarden({ currentProfile, partnerProfile, initialMe
                   {m.thumbnail ? <img src={m.thumbnail} alt="" className="w-14 h-14 rounded-lg object-cover" /> : <div className="w-14 h-14 rounded-lg bg-[#ece2cc]" />}
                   <div><p className="font-serif">{m.title}</p><p className="text-[11px] text-[#8a7a5c]">{formatMemoryDate(m)} · {m.visibility === "shared" ? "shared" : "private"} · {m.provenance?.label ?? SOURCE_LABEL[m.source]}</p></div>
                 </button>
-                <div className="flex gap-2">
-                  <button onClick={() => setOpenId(m.id)} className="px-3 py-1.5 rounded-lg bg-white border border-[#e2d4b6] text-xs flex items-center gap-1"><Pencil className="w-3 h-3" /> Organise</button>
-                  <button onClick={() => updateMemory(m.id, { status: "organised" })} className="px-3 py-1.5 rounded-lg bg-[#6b7a4f] text-white text-xs flex items-center gap-1"><Check className="w-3 h-3" /> Done</button>
-                  <button onClick={() => updateMemory(m.id, { status: "archived" })} className="px-3 py-1.5 rounded-lg bg-white border border-[#e2d4b6] text-xs flex items-center gap-1"><Archive className="w-3 h-3" /> Archive</button>
+                <div className="grid grid-cols-3 sm:flex gap-2">
+                  <button onClick={() => setOpenId(m.id)} className="justify-center px-3 py-1.5 rounded-lg bg-white border border-[#e2d4b6] text-xs flex items-center gap-1"><Pencil className="w-3 h-3" /> Organise</button>
+                  <button onClick={() => updateMemory(m.id, { status: "organised" })} className="justify-center px-3 py-1.5 rounded-lg bg-[#6b7a4f] text-white text-xs flex items-center gap-1"><Check className="w-3 h-3" /> Done</button>
+                  <button onClick={() => updateMemory(m.id, { status: "archived" })} className="justify-center px-3 py-1.5 rounded-lg bg-white border border-[#e2d4b6] text-xs flex items-center gap-1"><Archive className="w-3 h-3" /> Archive</button>
                 </div>
               </div>
             ))}
@@ -209,7 +216,7 @@ export default function MemoryGarden({ currentProfile, partnerProfile, initialMe
           <div className="p-4 rounded-2xl bg-[#f7f0e1] text-[#3e3326] border border-[#e2d4b6] space-y-3">
             <div className="flex flex-col sm:flex-row gap-2">
               <input value={newCol.name} onChange={(e) => setNewCol({ ...newCol, name: e.target.value })} maxLength={60} placeholder="New collection name" className="flex-1 px-3 py-2 rounded-xl bg-white border border-[#e2d4b6] text-sm" />
-              <div className="flex gap-2 text-xs">
+              <div className="grid grid-cols-3 sm:flex gap-2 text-xs">
                 <button onClick={() => setNewCol({ ...newCol, visibility: "shared" })} className={`px-3 py-2 rounded-xl border ${newCol.visibility === "shared" ? "bg-[#6b7a4f] text-white" : "bg-white border-[#e2d4b6]"}`}><Users className="inline w-3 h-3 mr-1" />Shared</button>
                 <button onClick={() => setNewCol({ ...newCol, visibility: "private" })} className={`px-3 py-2 rounded-xl border ${newCol.visibility === "private" ? "bg-[#5a4636] text-white" : "bg-white border-[#e2d4b6]"}`}><Lock className="inline w-3 h-3 mr-1" />Private</button>
                 <button onClick={() => addCollection(newCol.name)} className="px-4 py-2 rounded-xl bg-[#b8955a] text-white">Create</button>
@@ -251,12 +258,23 @@ export default function MemoryGarden({ currentProfile, partnerProfile, initialMe
         ) : (
           <div className="space-y-4">
             <p className="font-serif italic text-[#d9c9a6]">A few things you might have forgotten, chosen fresh each week.</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">{treasures.map((m) => <MemoryCard key={m.id} memory={m} uid={uid} tilt={tilt(m.id)} onOpen={() => setOpenId(m.id)} />)}</div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-6">{treasures.map((m) => <MemoryCard key={m.id} memory={m} uid={uid} tilt={tilt(m.id)} onOpen={() => setOpenId(m.id)} />)}</div>
           </div>
         )
       )}
 
       {tab === "sources" && <SourcesPanel />}
+
+      {!open && !saving && (
+        <button
+          onClick={() => setSaving(true)}
+          aria-label="Save this moment"
+          data-testid="save-fab"
+          className="sm:hidden fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-30 h-14 pl-4 pr-5 rounded-full bg-[#b8955a] text-white font-serif shadow-[0_8px_24px_rgba(0,0,0,0.5)] flex items-center gap-1.5 active:scale-95 transition-transform"
+        >
+          <Plus className="w-5 h-5" /> Save
+        </button>
+      )}
 
       {open && (
         <MemoryTheatre memory={open} list={openList.some((m) => m.id === open.id) ? openList : [open]} uid={uid} me={currentProfile} partner={partnerProfile}

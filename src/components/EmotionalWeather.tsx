@@ -241,13 +241,11 @@ export default function EmotionalWeather({
                 onChange={(e) => setDraftBattery(parseInt(e.target.value))}
                 className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
               />
-              <div className="flex justify-between items-center text-[10px] uppercase tracking-widest text-white/20 font-bold">
+              <div className="flex justify-between items-center text-[10px] uppercase tracking-widest text-white/40 font-bold">
                  <span>Drained</span>
-                 <span className={cn("text-xs font-semibold normal-case tracking-normal", batteryInfo.color)}>
-                   {batteryInfo.text}
-                 </span>
                  <span>Fully Charged</span>
               </div>
+              <p className={cn("text-xs font-semibold text-center", batteryInfo.color)}>{batteryInfo.text}</p>
             </div>
 
             {/* Emotion grid */}

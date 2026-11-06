@@ -24,6 +24,7 @@ npm test             # typecheck + all suites below
 npm run test:unit    # Memory Garden logic
 npm run test:rules   # Firestore rules in the emulator, against the named database
 npm run test:server  # the API end to end: emulators + local fakes of SaveState, Resend, Gemini, Jarvis, WeddingApp
+npm run test:ui      # the signed-in app in Chrome at phone and desktop sizes: screenshots plus overflow and tap-target checks
 ```
 
 The emulator uses [firebase.emulator.json](firebase.emulator.json): the emulator cannot read the multi-database `firestore` array in [firebase.json](firebase.json) and would otherwise run with no rules at all.

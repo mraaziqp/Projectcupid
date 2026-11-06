@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithCustomToken } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithCustomToken, connectAuthEmulator } from 'firebase/auth';
+import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 import firebaseConfig from '../../firebase-applet-config.json';
 
@@ -10,6 +10,14 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
+
+// Local UI tests only (tests/ui). VITE_USE_EMULATORS is never set in a real build,
+// so this block is compiled out of production.
+if ((import.meta as any).env.VITE_USE_EMULATORS) {
+  connectFirestoreEmulator(db, '127.0.0.1', 8085);
+  connectAuthEmulator(auth, 'http://127.0.0.1:9199', { disableWarnings: true });
+  (window as any).__cupidSignIn = (token: string) => signInWithCustomToken(auth, token);
+}
 
 export async function signIn() {
   try {

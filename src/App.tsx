@@ -8,6 +8,7 @@ import { useAuth } from "./hooks/useAuth";
 import Background from "./components/Background";
 import { Heart } from "lucide-react";
 import { lazyWithRetry } from "./lib/utils";
+import { MotionConfig } from "motion/react";
 
 const AuthScreen = lazyWithRetry(() => import("./components/AuthScreen"));
 const MainExperience = lazyWithRetry(() => import("./components/MainExperience"));
@@ -33,6 +34,7 @@ export default function App() {
   }
 
   return (
+    <MotionConfig reducedMotion="user">
     <Suspense
       fallback={
         <div className="h-screen flex items-center justify-center bg-[#070609] text-white/60 text-xs font-mono">
@@ -61,7 +63,7 @@ export default function App() {
               <MainExperience user={user} profile={profile as any} />
 
               {/* Aesthetic Footer */}
-              <footer className="relative z-10 py-6 px-4 md:px-12 flex flex-col sm:flex-row justify-between items-center text-white/30 text-[11px] gap-2 border-t border-white/5 max-w-6xl mx-auto">
+              <footer className="hidden lg:flex relative z-10 py-6 px-4 md:px-12 flex-col sm:flex-row justify-between items-center text-white/30 text-[11px] gap-2 border-t border-white/5 max-w-6xl mx-auto">
                 <div className="uppercase tracking-[0.2em] font-serif-title">
                   Designed with Love for Raaziq & Razia
                 </div>
@@ -76,5 +78,6 @@ export default function App() {
         </div>
       </PasswordGate>
     </Suspense>
+    </MotionConfig>
   );
 }

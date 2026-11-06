@@ -125,14 +125,14 @@ export default function AdminEditor({
   };
 
   return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-end">
+    <div className="space-y-4 md:space-y-8">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 pr-12 sm:pr-0">
         <div className="space-y-1">
-          <p className="text-xs uppercase tracking-[0.4em] text-pink-500 font-bold">Cupid Command</p>
-          <h2 className="text-3xl font-light italic font-serif text-white">The Writer's Studio</h2>
+          <p className="hidden sm:block text-xs uppercase tracking-[0.4em] text-pink-500 font-bold">Cupid Command</p>
+          <h2 className="text-2xl md:text-3xl font-light italic font-serif text-white">The Writer's Studio</h2>
         </div>
         
-        <div className="flex items-center gap-4 bg-white/5 border border-white/10 p-1.5 rounded-2xl">
+        <div className="self-start flex items-center gap-4 bg-white/5 border border-white/10 p-1.5 rounded-2xl">
            <button 
              onClick={() => setAiLocal(!aiLocal)}
              className={cn(
@@ -146,31 +146,32 @@ export default function AdminEditor({
         </div>
       </div>
 
-      <div className="flex flex-col xl:flex-row gap-6 h-[70vh]">
+      <div className="flex flex-col xl:flex-row gap-6 xl:h-[70vh]">
         {/* Editor Pane */}
         <GlassPanel className="flex-1 flex flex-col overflow-hidden p-0">
-           <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/3">
-             <div className="flex items-center gap-3">
+           <div className="p-3 md:p-4 border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-2 bg-white/3">
+             <div className="hidden md:flex items-center gap-3">
                <Edit3 size={16} className="text-white/40" />
-               <span className="text-xs font-bold uppercase tracking-widest text-white/60">Script Draft</span>
+               <span className="text-xs font-bold uppercase tracking-widest text-white/60">Draft</span>
              </div>
-             <div className="flex items-center gap-3">
+             <div className="grid grid-cols-3 md:flex items-center gap-2 md:gap-3">
                 <input 
                   type="datetime-local" 
                   value={publishDate}
                   onChange={(e) => setPublishDate(e.target.value)}
-                  className="bg-transparent text-[10px] text-white/40 border border-white/10 rounded-lg px-3 py-1.5 focus:outline-none focus:border-pink-500/50"
+                  aria-label="Publish date and time"
+                  className="col-span-3 w-full md:w-auto min-w-0 bg-transparent text-[10px] text-white/70 border border-white/10 rounded-lg px-3 py-1.5 focus:outline-none focus:border-pink-500/50"
                 />
                 <button
                   onClick={() => setPublishDate(format(new Date(), "yyyy-MM-dd'T'HH:mm"))}
-                  className="px-3 py-1.5 rounded-lg bg-white/5 text-white/60 border border-white/10 text-[10px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all"
+                  className="px-1 md:px-3 py-1.5 rounded-lg bg-white/5 text-white/60 border border-white/10 text-[10px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all"
                 >
-                  Publish Now
+                  Now
                 </button>
                 <button 
                   onClick={handleAIRefine}
                   disabled={aiOptimizing || aiProofreading}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-pink-500/10 text-pink-400 border border-pink-500/20 text-[10px] font-bold uppercase tracking-widest hover:bg-pink-500/20 transition-all disabled:opacity-50"
+                  className="flex items-center justify-center gap-1 md:gap-2 px-1 md:px-3 py-1.5 rounded-lg bg-pink-500/10 text-pink-400 border border-pink-500/20 text-[10px] font-bold uppercase tracking-widest hover:bg-pink-500/20 transition-all disabled:opacity-50"
                 >
                   <Sparkles size={12} className={aiOptimizing ? "animate-spin" : ""} />
                   Refine
@@ -178,7 +179,7 @@ export default function AdminEditor({
                 <button 
                   onClick={handleProofread}
                   disabled={aiOptimizing || aiProofreading}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-500/20 transition-all disabled:opacity-50"
+                  className="flex items-center justify-center gap-1 md:gap-2 px-1 md:px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-500/20 transition-all disabled:opacity-50"
                 >
                   <CheckCircle size={12} className={aiProofreading ? "animate-pulse" : ""} />
                   Proofread
@@ -186,12 +187,12 @@ export default function AdminEditor({
              </div>
            </div>
            
-           <div className="flex-1 flex flex-col p-8 space-y-6 overflow-y-auto custom-scrollbar">
+           <div className="flex-1 flex flex-col p-4 md:p-8 space-y-4 md:space-y-6 overflow-y-auto custom-scrollbar">
               <input 
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Letter Title..."
-                className="bg-transparent text-4xl font-serif italic font-light text-white placeholder:text-white/10 border-none focus:ring-0 p-0"
+                className="bg-transparent text-2xl md:text-4xl font-serif italic font-light text-white placeholder:text-white/45 border-none focus:ring-0 p-0"
               />
               <textarea 
                 value={content}
@@ -199,13 +200,13 @@ export default function AdminEditor({
                 spellCheck={true}
                 placeholder="Write your heart out, Raaziq..."
                 className={cn(
-                  "flex-1 bg-transparent text-lg text-white/70 placeholder:text-white/10 border-none focus:ring-0 p-0 resize-none font-sans leading-relaxed transition-all",
+                  "flex-1 min-h-[32dvh] xl:min-h-0 bg-transparent text-lg text-white/85 placeholder:text-white/45 border-none focus:ring-0 p-0 resize-none font-sans leading-relaxed transition-all",
                   (aiOptimizing || aiProofreading) && "opacity-50 scale-[0.99] blur-[1px] cursor-wait"
                 )}
               />
            </div>
 
-           <div className="p-6 border-t border-white/5 bg-white/3">
+           <div className="p-3 md:p-6 border-t border-white/5 bg-white/3">
               <button 
                 onClick={handlePublish}
                 disabled={loading || !title || !content}
@@ -214,7 +215,7 @@ export default function AdminEditor({
                 <div className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform">
                   <Send size={16} />
                 </div>
-                Transmit to Aurora
+                Publish letter
               </button>
            </div>
         </GlassPanel>

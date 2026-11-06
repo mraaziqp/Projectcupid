@@ -10,7 +10,7 @@ export function formatMemoryDate(m: Pick<Memory, "memoryDate" | "datePrecision">
   if (Number.isNaN(d.getTime())) return m.memoryDate;
   if (m.datePrecision === "year") return String(d.getFullYear());
   if (m.datePrecision === "month") return d.toLocaleDateString(undefined, { month: "long", year: "numeric" });
-  return d.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
+  return d.toLocaleDateString(undefined, { day: "numeric", month: typeof window !== "undefined" && window.innerWidth < 640 ? "short" : "long", year: "numeric" });
 }
 
 const TYPE_ICON: Record<string, any> = { video: Video, voice: Mic, letter: Mail, booklet: BookOpen, text: FileText };
@@ -23,7 +23,7 @@ export default function MemoryCard({ memory, uid, onOpen, tilt = 0 }: { memory: 
     <button
       onClick={onOpen}
       style={{ transform: `rotate(${tilt}deg)` }}
-      className="group text-left bg-[#fbf6ea] p-2.5 pb-4 rounded-[3px] shadow-[0_6px_18px_rgba(0,0,0,0.35)] hover:shadow-[0_10px_28px_rgba(0,0,0,0.45)] hover:-translate-y-1 hover:rotate-0 transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c9a46a] w-full"
+      className="group text-left bg-[#fbf6ea] p-2 pb-3 sm:p-2.5 sm:pb-4 rounded-[3px] shadow-[0_6px_18px_rgba(0,0,0,0.35)] hover:shadow-[0_10px_28px_rgba(0,0,0,0.45)] hover:-translate-y-1 hover:rotate-0 transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c9a46a] w-full"
       aria-label={`Open memory: ${memory.title}`}
     >
       <div className="relative aspect-[4/5] bg-[#ece2cc] overflow-hidden rounded-[2px]">
@@ -43,10 +43,10 @@ export default function MemoryCard({ memory, uid, onOpen, tilt = 0 }: { memory: 
         {Icon && memory.thumbnail && <span className="absolute bottom-1.5 left-1.5 p-1 rounded-full bg-black/45 text-white"><Icon className="w-3 h-3" /></span>}
       </div>
       <div className="px-1 pt-2.5 space-y-0.5">
-        <h4 className="font-serif text-[15px] leading-snug text-[#3e3326] line-clamp-1">{memory.title}</h4>
-        <div className="flex items-center justify-between text-[10.5px] text-[#8b7a62]">
-          <span>{formatMemoryDate(memory)}</span>
-          <span className="uppercase tracking-wider">{SOURCE_LABEL[memory.source] ?? memory.source}</span>
+        <h4 className="font-serif text-[15px] leading-snug text-[#3e3326] line-clamp-2 min-h-[2.5em] sm:min-h-0 sm:line-clamp-1">{memory.title}</h4>
+        <div className="flex items-center justify-between gap-2 text-[11px] text-[#7a6a55]">
+          <span className="truncate">{formatMemoryDate(memory)}</span>
+          {memory.source !== "cupid" && <span className="uppercase tracking-wider hidden sm:inline">{SOURCE_LABEL[memory.source] ?? memory.source}</span>}
         </div>
       </div>
     </button>

@@ -115,7 +115,7 @@ export default function SourcesPanel() {
               </div>
               <p className="text-xs text-[#7a6a55] mt-1">{s.about}</p>
               <div className="flex gap-2 mt-3">
-                <button disabled={!canOpen || busy} onClick={() => open(s.id)} className="px-3 py-1.5 rounded-lg bg-[#6b7a4f] text-white text-xs disabled:opacity-40 flex items-center gap-1"><FolderOpen className="w-3.5 h-3.5" /> Preview</button>
+                <button disabled={!canOpen || busy} onClick={() => open(s.id)} className="px-3 py-1.5 rounded-lg bg-[#6b7a4f] text-white text-xs disabled:opacity-60 flex items-center justify-center gap-1"><FolderOpen className="w-3.5 h-3.5" /> Preview</button>
                 {s.id === "weddingapp" && status?.weddingapp.configured && (status.weddingapp.disconnected
                   ? <button disabled={busy} onClick={reconnect} className="px-3 py-1.5 rounded-lg bg-white border border-[#e2d4b6] text-xs flex items-center gap-1"><Plug className="w-3.5 h-3.5" /> Reconnect</button>
                   : <button disabled={busy} onClick={() => disconnect("weddingapp")} className="px-3 py-1.5 rounded-lg bg-white border border-[#e2d4b6] text-xs flex items-center gap-1"><Unplug className="w-3.5 h-3.5" /> Disconnect</button>)}
@@ -146,35 +146,32 @@ export default function SourcesPanel() {
         <div className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-[#f7f0e1] border border-[#e2d4b6] text-[#3e3326]">
             <div className="text-sm">{items.length} records · {selected.size} selected <button onClick={() => setSelected(new Set(items.filter((x) => x.visibility === "shareable" && !x.imported).map((x) => x.sourceRecordId)))} className="ml-2 text-xs underline">select all</button> {active === "savestate" && <button onClick={() => open("savestate")} className="ml-2 text-xs underline"><RefreshCw className="inline w-3 h-3" /> albums</button>}</div>
-            <div className="flex items-center gap-2 text-xs">
+            <div className="flex flex-wrap items-center gap-2 text-xs">
               <span>Import as</span>
               <button onClick={() => setVisibility("shared")} className={`px-2.5 py-1 rounded-lg border ${visibility === "shared" ? "bg-[#6b7a4f] text-white" : "bg-white border-[#e2d4b6]"}`}><Users className="inline w-3 h-3 mr-1" />Shared</button>
               <button onClick={() => setVisibility("private")} className={`px-2.5 py-1 rounded-lg border ${visibility === "private" ? "bg-[#5a4636] text-white" : "bg-white border-[#e2d4b6]"}`}><Lock className="inline w-3 h-3 mr-1" />Private to me</button>
               <button disabled={!selected.size || busy} onClick={doImport} className="px-3 py-1.5 rounded-lg bg-[#b8955a] text-white disabled:opacity-40">Import</button>
             </div>
           </div>
-          <div className="overflow-x-auto rounded-2xl border border-white/10">
-            <table className="w-full text-xs text-white/80">
-              <thead className="bg-white/5 text-white/50 uppercase tracking-wider text-[10px]">
-                <tr><th className="p-2"></th><th className="p-2 text-left">Title</th><th className="p-2 text-left">Date</th><th className="p-2 text-left">Type</th><th className="p-2 text-left">Can be shared</th><th className="p-2 text-left">Status</th></tr>
-              </thead>
-              <tbody>
-                {items.map((it) => {
-                  const restricted = it.visibility === "restricted";
-                  return (
-                    <tr key={it.sourceRecordId} className="border-t border-white/5">
-                      <td className="p-2"><input type="checkbox" disabled={restricted || it.imported} checked={selected.has(it.sourceRecordId)} onChange={() => toggle(it.sourceRecordId)} aria-label={`Select ${it.title}`} /></td>
-                      <td className="p-2">{it.title}{it.group ? <span className="text-white/40"> · {it.group}</span> : null}</td>
-                      <td className="p-2 whitespace-nowrap">{it.date ?? "—"}</td>
-                      <td className="p-2">{it.mediaType}</td>
-                      <td className="p-2">{restricted ? <span className="text-rose-300 flex items-center gap-1"><Lock className="w-3 h-3" />{it.reason ?? "restricted"}</span> : "yes"}</td>
-                      <td className="p-2">{it.imported ? <span className="text-emerald-300 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" />imported</span> : "—"}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <ul className="rounded-2xl border border-white/10 divide-y divide-white/5 overflow-hidden">
+            {items.map((it) => {
+              const restricted = it.visibility === "restricted";
+              const disabled = restricted || it.imported;
+              return (
+                <li key={it.sourceRecordId}>
+                  <label className={`flex items-center gap-3 px-3 py-2.5 min-h-[56px] ${disabled ? "opacity-70" : "cursor-pointer active:bg-white/5"}`}>
+                    <input type="checkbox" disabled={disabled} checked={selected.has(it.sourceRecordId)} onChange={() => toggle(it.sourceRecordId)} aria-label={`Select ${it.title}`} className="accent-[#b8955a]" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm text-white/90 truncate">{it.title}</span>
+                      <span className="block text-[11px] text-white/60 truncate">{[it.group, it.date, it.mediaType].filter(Boolean).join(" · ")}</span>
+                      {restricted && <span className="flex items-center gap-1 text-[11px] text-rose-300"><Lock className="w-3 h-3 shrink-0" />{it.reason ?? "restricted"}</span>}
+                    </span>
+                    {it.imported && <span className="flex items-center gap-1 text-[11px] text-emerald-300 shrink-0"><CheckCircle2 className="w-3.5 h-3.5" />imported</span>}
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       )}
     </div>

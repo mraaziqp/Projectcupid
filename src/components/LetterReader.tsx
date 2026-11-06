@@ -247,38 +247,39 @@ export default function LetterReader({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-12 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[60] flex items-center justify-center p-0 md:p-12 bg-black/60 backdrop-blur-sm"
     >
-      <GlassPanel className="w-full max-w-3xl h-[85vh] flex flex-col p-0 overflow-hidden shadow-[0_0_50px_rgba(244,63,94,0.1)]">
+      <GlassPanel className="w-full max-w-3xl h-[100dvh] md:h-[85vh] flex flex-col p-0 overflow-hidden rounded-none md:rounded-3xl border-0 md:border shadow-[0_0_50px_rgba(244,63,94,0.1)]">
         {/* Header */}
-        <div className="p-8 md:px-12 flex justify-between items-center border-b border-white/5 bg-white/5">
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={onClose}
-              className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors text-white/40 hover:text-white"
-            >
-              <X className="w-6 h-6" />
-            </button>
-            <div className="space-y-1">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-pink-400 font-bold">
-                 Daily Aurora • {format(date, "MMMM do, yyyy")}
-              </p>
-              <h2 className="text-2xl font-light italic font-serif text-white">{editedTitle}</h2>
-            </div>
+        <div className="px-4 pt-[calc(0.5rem+env(safe-area-inset-top))] pb-3 md:p-8 md:px-12 grid grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-1 border-b border-white/5 bg-white/5 shrink-0">
+          <button
+            onClick={onClose}
+            aria-label="Close letter"
+            className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors text-white/70 hover:text-white flex items-center justify-center"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          <div className="space-y-1 order-last col-span-3 md:order-none md:col-span-1 min-w-0">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-pink-400 font-bold">
+              {format(date, "MMMM do, yyyy")}
+            </p>
+            <h2 className="text-xl md:text-2xl leading-snug font-light italic font-serif text-white break-words">{editedTitle}</h2>
           </div>
-          
-          <div className="flex items-center gap-2">
+
+          <div className="col-start-3 flex items-center gap-1 md:gap-2">
             {letterIsFromCurrentUser && isPersistedLetter && (
               <>
                 <button
                   onClick={() => setIsEditingLetter(!isEditingLetter)}
-                  className="p-3 border border-white/10 rounded-xl transition-all bg-white/5 text-white/40 hover:text-white"
+                  aria-label="Edit letter"
+                  className="p-2.5 md:p-3 flex items-center justify-center border border-white/10 rounded-xl transition-all bg-white/5 text-white/40 hover:text-white"
                 >
                   <Edit2 className="w-5 h-5" />
                 </button>
                 <button
                   onClick={handleDeleteLetter}
-                  className="p-3 border border-white/10 rounded-xl transition-all bg-white/5 text-white/40 hover:text-rose-400"
+                  aria-label="Delete letter"
+                  className="p-2.5 md:p-3 flex items-center justify-center border border-white/10 rounded-xl transition-all bg-white/5 text-white/40 hover:text-rose-400"
                 >
                   <Trash2 className="w-5 h-5" />
                 </button>
@@ -286,8 +287,9 @@ export default function LetterReader({
             )}
             <button 
               onClick={toggleFavorite}
+              aria-label={isFavorite ? "Remove from favourites" : "Add to favourites"}
               className={cn(
-                "p-3 border border-white/10 rounded-xl transition-all",
+                "p-2.5 md:p-3 flex items-center justify-center border border-white/10 rounded-xl transition-all",
                 isFavorite ? "bg-pink-500/10 text-pink-500" : "bg-white/5 text-white/40 hover:text-white"
               )}
             >
@@ -297,8 +299,8 @@ export default function LetterReader({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-10 md:p-20 custom-scrollbar relative">
-          <div className="absolute top-0 right-0 p-12 text-white/5 pointer-events-none">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:p-20 custom-scrollbar relative">
+          <div className="hidden md:block absolute top-0 right-0 p-12 text-white/5 pointer-events-none">
              <Heart size={120} fill="currentColor" />
           </div>
           
@@ -307,7 +309,7 @@ export default function LetterReader({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1 }}
-              className="text-4xl font-light italic font-serif text-white mb-10 decoration-pink-500/30 underline underline-offset-8"
+              className="text-2xl md:text-4xl font-light italic font-serif text-white mb-6 md:mb-10 md:decoration-pink-500/30 md:underline md:underline-offset-8"
             >
                 {salutationLine}
             </motion.h1>
@@ -471,7 +473,7 @@ export default function LetterReader({
                     >
                       {sendingReply ? "Sending..." : "Send Reply"}
                     </button>
-                    <p className="text-[11px] text-white/35">Tip: Press Ctrl/Cmd + Enter to send quickly.</p>
+                    <p className="hidden lg:block text-[11px] text-white/35">Tip: Press Ctrl/Cmd + Enter to send quickly.</p>
                     {replyState && (
                       <p className={cn("text-xs", replyState.type === "success" ? "text-emerald-300" : "text-rose-300")}>
                         {replyState.message}

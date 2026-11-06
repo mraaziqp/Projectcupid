@@ -17,9 +17,8 @@ export default function PasswordGate({ children }: { children: React.ReactNode }
     }
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password === CORRECT_PASSWORD) {
+  const tryKey = (value: string) => {
+    if (value === CORRECT_PASSWORD) {
       setIsUnlocked(true);
       localStorage.setItem("cupid_unlocked", "true");
     } else {
@@ -29,10 +28,15 @@ export default function PasswordGate({ children }: { children: React.ReactNode }
     }
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    tryKey(password);
+  };
+
   if (isUnlocked) return <>{children}</>;
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-neutral-950 relative overflow-hidden">
+    <div className="min-h-[100dvh] flex flex-col items-center justify-center gap-6 p-6 bg-neutral-950 relative overflow-hidden">
       {/* Background blobs to match theme */}
       <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] rounded-full bg-purple-900/20 blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-blue-900/10 blur-[100px] pointer-events-none"></div>
@@ -54,17 +58,25 @@ export default function PasswordGate({ children }: { children: React.ReactNode }
           <input
             type="password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => {
+              const v = e.target.value.replace(/\D/g, "").slice(0, 4);
+              setPassword(v);
+              if (v.length === 4) tryKey(v);
+            }}
+            inputMode="numeric"
+            pattern="[0-9]*"
+            autoComplete="off"
+            aria-label="Connection key"
             autoFocus
             maxLength={4}
             placeholder="••••"
-            className="w-full bg-white/5 border border-white/10 rounded-xl py-4 text-center text-3xl tracking-[1em] text-white focus:outline-none focus:border-pink-500/50 transition-colors placeholder:text-white/5"
+            className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-[0.6em] text-center text-3xl tracking-[0.6em] text-white focus:outline-none focus:border-pink-500/50 transition-colors placeholder:text-white/5"
           />
           <button
             type="submit"
             className="w-full bg-white text-black font-bold py-4 rounded-xl hover:bg-pink-100 transition-all uppercase tracking-widest text-xs"
           >
-            Unlock Aurora
+            Unlock
           </button>
         </form>
 
@@ -78,7 +90,7 @@ export default function PasswordGate({ children }: { children: React.ReactNode }
         </div>
       </GlassPanel>
       
-      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 text-[10px] text-white/20 uppercase tracking-[0.5em] flex items-center gap-2">
+      <div className="text-[11px] text-white/40 uppercase tracking-[0.25em] flex items-center gap-2 whitespace-nowrap">
         Protected <Heart size={10} fill="currentColor" /> Project Cupid
       </div>
     </div>

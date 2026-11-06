@@ -159,7 +159,7 @@ export default function SettingsScreen({
 
             {/* Owner partner preview toggle */}
             {currentProfile?.role === "admin" && onPreviewPartnerRole && (
-              <div className="pt-4 border-t border-white/10 flex items-center justify-between">
+              <div className="pt-4 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <strong className="text-xs text-white block">Preview Partner Experience</strong>
                   <span className="text-[11px] text-white/50">
@@ -198,7 +198,7 @@ export default function SettingsScreen({
 
           {/* Security & Sign Out */}
           <GlassPanel className="p-6 rounded-2xl border border-white/10 space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="space-y-1">
                 <h3 className="text-sm font-medium text-white">Security & Session</h3>
                 <span className="text-xs text-white/50">Encrypted transmission, Firebase Auth authenticated</span>

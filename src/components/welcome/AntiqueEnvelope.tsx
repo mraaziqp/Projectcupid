@@ -6,12 +6,14 @@ interface AntiqueEnvelopeProps {
   isOpen: boolean;
   onOpen: () => void;
   disabled?: boolean;
+  recipientName?: string;
 }
 
 export const AntiqueEnvelope: React.FC<AntiqueEnvelopeProps> = ({
   isOpen,
   onOpen,
-  disabled = false
+  disabled = false,
+  recipientName = "Love"
 }) => {
   return (
     <div className="relative flex flex-col items-center justify-center select-none py-6">
@@ -60,12 +62,12 @@ export const AntiqueEnvelope: React.FC<AntiqueEnvelopeProps> = ({
           </div>
 
           {/* Calligraphic Handwriting Address */}
-          <div className="absolute left-6 top-12 space-y-1">
-            <div className="text-[11px] font-serif italic text-stone-500 tracking-wider">A special delivery for:</div>
-            <div className="text-xl sm:text-2xl font-serif text-[#6b2a47] font-semibold tracking-wide drop-shadow-sm">
-              My Dearest Razia
+          <div className="absolute left-5 sm:left-6 bottom-3 sm:bottom-auto sm:top-12 sm:space-y-1 max-w-[75%] z-10">
+            <div className="hidden sm:block text-[11px] font-serif italic text-stone-500 tracking-wider">A special delivery for:</div>
+            <div className="text-lg sm:text-2xl leading-tight font-serif text-[#6b2a47] font-semibold tracking-wide drop-shadow-sm">
+              My Dearest {recipientName}
             </div>
-            <div className="text-[9px] font-mono text-stone-400 tracking-widest uppercase">
+            <div className="hidden sm:block text-[9px] font-mono text-stone-400 tracking-widest uppercase">
               SANCTUARY OF LOVE • ROOM FOR TWO
             </div>
           </div>

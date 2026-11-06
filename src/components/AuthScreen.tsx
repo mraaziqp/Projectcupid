@@ -40,12 +40,12 @@ export default function AuthScreen() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6">
-      <GlassPanel className="max-w-md w-full p-8 text-center space-y-7">
+    <div className="min-h-[100dvh] flex items-center justify-center p-4 sm:p-6">
+      <GlassPanel className="max-w-md w-full p-6 sm:p-8 text-center space-y-6">
         <motion.div
           initial={{ scale: 0.8, rotate: -10 }}
           animate={{ scale: 1, rotate: 0 }}
-          transition={{ duration: 1, repeat: Infinity, repeatType: "reverse" }}
+          transition={{ duration: 1 }}
           className="mx-auto w-16 h-16 bg-rose-500/20 rounded-2xl flex items-center justify-center"
         >
           <Heart className="w-8 h-8 text-rose-500 fill-rose-500/50" />

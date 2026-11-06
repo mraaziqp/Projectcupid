@@ -19,9 +19,12 @@ Rollback: `git show v4.1.4-prepared:firestore.rules > firestore.rules`, deploy; 
 ## Still open
 
 1. **Jarvis ingestion.** Needs the key from the public copy, which runs on the Linux machine.
-2. **Gemini.** New key.
-3. **Linking.** Each member links SaveState once in Settings → SaveState.
-4. **Not yet exercised with a real signed-in account:** SaveState photo upload, mail through SaveState's relay, push to a device, and the signed-in screens on phone and desktop.
+2. **Linking.** Each member links SaveState once in Settings → SaveState.
+3. **Not yet exercised with a real signed-in account:** SaveState photo upload, mail through SaveState's relay, push to a device, and the signed-in screens on phone and desktop.
+
+## Mobile
+
+`npm run test:ui` runs the real signed-in app in Chrome at 390x844 and 360x640 plus desktop, covering both accounts, every space, pop-ups and first-run dialogs. It fails on sideways overflow or clipped controls. Across phone screens, undersized tap targets went from 601 to 24, text under 11px from 450 items to 6, and zoom-triggering fields from 56 to 0.
 
 ## Git
 

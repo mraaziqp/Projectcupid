@@ -92,6 +92,18 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
     if (profile) fetchPartner();
   }, [profile]);
 
+  // A new screen starts at its top, not wherever the last one was scrolled to.
+  useEffect(() => { window.scrollTo(0, 0); }, [activeSpace]);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setMobileMenuOpen(false); };
+    window.addEventListener("keydown", onKey);
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = previous; };
+  }, [mobileMenuOpen]);
+
   // Letters Realtime Subscription
   useEffect(() => {
     const q = query(
@@ -142,21 +154,28 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
   }, [user.uid]);
 
   const navItems = [
-    { id: "home", label: "Home", icon: Home },
-    { id: "garden", label: "Memory Garden", icon: Flower2 },
-    { id: "love", label: "Our Love", icon: BookHeart },
-    { id: "boxes", label: "Message Boxes", icon: Gift, hasBadge: isDailyDeferred },
-    { id: "memory_book", label: "Memory Book", icon: BookOpen },
-    { id: "wellbeing", label: "Her Wellbeing", icon: ShieldCheck },
-    { id: "future", label: "Our Future", icon: Compass },
-    { id: "little", label: "Little Things", icon: Sparkles }
+    { id: "home", label: "Home", short: "Home", icon: Home },
+    { id: "garden", label: "Memory Garden", short: "Garden", icon: Flower2 },
+    { id: "love", label: "Our Love", short: "Love", icon: BookHeart },
+    { id: "boxes", label: "Message Boxes", short: "Boxes", icon: Gift, hasBadge: isDailyDeferred },
+    { id: "memory_book", label: "Memory Book", short: "Book", icon: BookOpen },
+    { id: "wellbeing", label: "Her Wellbeing", short: "Wellbeing", icon: ShieldCheck },
+    { id: "future", label: "Our Future", short: "Future", icon: Compass },
+    { id: "little", label: "Little Things", short: "Little", icon: Sparkles }
   ];
 
+  // Her most-used space sits on her bar; his is the message boxes. Everything else is under More.
+  const barIds = profile?.role === "sanctuary_owner" ? ["home", "garden", "love", "wellbeing"] : ["home", "garden", "love", "boxes"];
+  const barItems = barIds.map((id) => navItems.find((n) => n.id === id)!);
+  const moreItems = navItems.filter((n) => !barIds.includes(n.id));
+  const moreIsActive = !barIds.includes(activeSpace);
+  const openSpace = (id: string) => { setActiveSpace(id as AppSpace); setMobileMenuOpen(false); };
+
   return (
-    <div className="min-h-screen text-white relative pb-24 md:pb-16">
+    <div className="min-h-screen text-white relative pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-16">
       {/* UNIVERSAL TOP NAVIGATION BAR */}
-      <header className="fixed top-3 sm:top-5 left-3 sm:left-6 right-3 sm:right-6 z-40 max-w-6xl mx-auto">
-        <div className="flex items-center justify-between h-14 md:h-16 px-4 md:px-6 bg-[#0e0c12]/75 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-xl transition-all">
+      <header className="relative lg:fixed lg:top-5 lg:left-6 lg:right-6 z-40 max-w-6xl mx-auto pt-[env(safe-area-inset-top)] lg:pt-0">
+        <div className="flex items-center justify-between h-14 lg:h-16 px-4 lg:px-6 lg:bg-[#0e0c12]/75 lg:backdrop-blur-2xl lg:border lg:border-white/10 lg:rounded-2xl lg:shadow-xl transition-all">
           {/* Brand Logo & Title */}
           <div
             onClick={() => setActiveSpace("home")}
@@ -165,11 +184,11 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-rose-500 to-amber-500 flex items-center justify-center shadow-[0_0_15px_rgba(244,63,94,0.3)] group-hover:scale-105 transition-transform">
               <Heart className="w-4 h-4 text-white fill-white" />
             </div>
-            <div className="hidden sm:block">
+            <div className="lg:hidden 2xl:block whitespace-nowrap">
               <span className="text-sm font-semibold tracking-wider uppercase font-serif-title text-white/95">
                 Project Cupid
               </span>
-              <span className="text-[10px] text-rose-300 block font-mono -mt-1 tracking-widest">
+              <span className="hidden lg:block text-[10px] text-rose-300 font-mono -mt-1 tracking-widest">
                 Our Little Universe • 5.0
               </span>
             </div>
@@ -179,7 +198,7 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
           {isDailyDeferred && dailyMessage && !dailyMessage.isOpened && (
             <button
               onClick={() => setShowDailyWelcome(true)}
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-rose-500/20 via-amber-500/20 to-rose-500/20 border border-rose-400/40 text-amber-200 text-xs font-serif shadow-lg animate-pulse hover:scale-105 transition"
+              className="hidden 2xl:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-rose-500/20 via-amber-500/20 to-rose-500/20 border border-rose-400/40 text-amber-200 text-xs font-serif shadow-lg animate-pulse hover:scale-105 transition"
             >
               <Gift className="w-3.5 h-3.5 text-rose-400" />
               <span>Today's Gift Waiting (Tap to Open)</span>
@@ -187,7 +206,7 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
           )}
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
+          <nav aria-label="Main" className="hidden lg:flex items-center gap-0.5 xl:gap-1">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeSpace === item.id;
@@ -195,14 +214,16 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
                 <button
                   key={item.id}
                   onClick={() => setActiveSpace(item.id as AppSpace)}
-                  className={`px-2.5 xl:px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 relative ${
+                  aria-current={isActive ? "page" : undefined}
+                  className={`px-2 xl:px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5 relative ${
                     isActive
                       ? "bg-white/10 text-white font-semibold border border-white/15 shadow-sm"
                       : "text-white/60 hover:text-white hover:bg-white/5"
                   }`}
                 >
                   <Icon className={`w-3.5 h-3.5 ${isActive ? "text-rose-400" : ""}`} />
-                  <span>{item.label}</span>
+                  <span className="2xl:hidden">{item.short}</span>
+                  <span className="hidden 2xl:inline">{item.label}</span>
                   {item.hasBadge && (
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-400 absolute top-1.5 right-1.5 animate-pulse" />
                   )}
@@ -211,8 +232,8 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
             })}
           </nav>
 
-          {/* Right Action Icons */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Right Action Icons (on phones these live under More) */}
+          <div className="hidden lg:flex items-center gap-2 sm:gap-3">
             {/* Admin Command Centre Shortcut for Raaziq */}
             {profile?.role === "admin" && (
               <button
@@ -225,7 +246,7 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
                 title="Admin Command Centre"
               >
                 <Shield className="w-3.5 h-3.5 text-rose-400" />
-                <span className="hidden xl:inline">Command Centre</span>
+                <span className="hidden 2xl:inline">Command Centre</span>
               </button>
             )}
 
@@ -241,7 +262,7 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
                 title="Write a Letter"
               >
                 <Edit3 className="w-3.5 h-3.5" />
-                <span className="hidden md:inline">Write</span>
+                <span className="hidden 2xl:inline">Write</span>
               </button>
             )}
 
@@ -266,105 +287,116 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
             >
               <Settings className="w-4 h-4" />
             </button>
-
-            {/* Mobile Menu Hamburger */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-xl bg-white/5 border border-white/10 text-white/70 hover:text-white"
-              aria-label="Toggle navigation menu"
-            >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
           </div>
         </div>
       </header>
 
-      {/* MOBILE FULL DRAWER NAVIGATION */}
+      {/* PHONE: "MORE" SHEET */}
       <AnimatePresence>
         {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed inset-x-3 top-20 z-40 lg:hidden p-5 rounded-3xl bg-[#121017]/95 backdrop-blur-2xl border border-white/15 shadow-2xl space-y-3"
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-white/10 text-xs text-white/50">
-              <span>Signed in as <strong className="text-white">{displayName}</strong></span>
-              <button
-                onClick={() => auth.signOut()}
-                className="text-rose-400 hover:text-rose-300 flex items-center gap-1"
-              >
-                <LogOut className="w-3.5 h-3.5" /> Sign out
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = activeSpace === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      setActiveSpace(item.id as AppSpace);
-                      setMobileMenuOpen(false);
-                    }}
-                    className={`p-3 rounded-2xl border text-left flex items-center gap-2.5 transition-all ${
-                      isActive
-                        ? "bg-rose-500/20 border-rose-500/40 text-rose-200 font-medium"
-                        : "bg-white/5 border-white/5 text-white/70"
-                    }`}
-                  >
-                    <Icon className="w-4 h-4 shrink-0 text-amber-300" />
-                    <span className="text-xs truncate">{item.label}</span>
-                  </button>
-                );
-              })}
-
-              {profile?.role === "admin" && (
-                <button
-                  onClick={() => {
-                    setActiveSpace("admin_centre");
-                    setMobileMenuOpen(false);
-                  }}
-                  className="p-3 rounded-2xl border border-rose-500/30 bg-rose-950/20 text-rose-200 text-left flex items-center gap-2.5"
-                >
-                  <Shield className="w-4 h-4 shrink-0 text-rose-400" />
-                  <span className="text-xs truncate">Admin Command</span>
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileMenuOpen(false)}
+              className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+              aria-hidden="true"
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 32, stiffness: 340 }}
+              role="dialog"
+              aria-modal="true"
+              aria-label="More"
+              data-testid="mobile-menu"
+              className="fixed inset-x-0 bottom-0 z-40 lg:hidden max-h-[85dvh] overflow-y-auto overscroll-contain rounded-t-3xl bg-[#14111a] border-t border-white/15 shadow-2xl px-4 pt-3 pb-[calc(6.5rem+env(safe-area-inset-bottom))]"
+            >
+              <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
+              <div className="grid grid-cols-2 gap-2.5">
+                {moreItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeSpace === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => openSpace(item.id)}
+                      aria-current={isActive ? "page" : undefined}
+                      className={`p-3.5 rounded-2xl border text-left flex items-center gap-2.5 ${isActive ? "bg-rose-500/20 border-rose-500/40 text-rose-100" : "bg-white/5 border-white/10 text-white/85"}`}
+                    >
+                      <Icon className="w-5 h-5 shrink-0 text-amber-300" />
+                      <span className="text-sm">{item.label}</span>
+                      {item.hasBadge && <span className="ml-auto w-2 h-2 rounded-full bg-amber-400" />}
+                    </button>
+                  );
+                })}
+                {profile?.role === "admin" && (
+                  <>
+                    <button onClick={() => openSpace("write_letter")} className="p-3.5 rounded-2xl border bg-white/5 border-white/10 text-white/85 text-left flex items-center gap-2.5">
+                      <Edit3 className="w-5 h-5 shrink-0 text-amber-300" /><span className="text-sm">Write a Letter</span>
+                    </button>
+                    <button onClick={() => openSpace("admin_centre")} className="p-3.5 rounded-2xl border bg-white/5 border-white/10 text-white/85 text-left flex items-center gap-2.5">
+                      <Shield className="w-5 h-5 shrink-0 text-rose-300" /><span className="text-sm">Command Centre</span>
+                    </button>
+                  </>
+                )}
+                <button onClick={() => openSpace("settings")} className="p-3.5 rounded-2xl border bg-white/5 border-white/10 text-white/85 text-left flex items-center gap-2.5">
+                  <Settings className="w-5 h-5 shrink-0 text-white/70" /><span className="text-sm">Settings</span>
                 </button>
-              )}
-            </div>
-          </motion.div>
+                <button onClick={() => { setMobileMenuOpen(false); setShowOnboarding(true); }} className="p-3.5 rounded-2xl border bg-white/5 border-white/10 text-white/85 text-left flex items-center gap-2.5">
+                  <HelpCircle className="w-5 h-5 shrink-0 text-white/70" /><span className="text-sm">App Tour</span>
+                </button>
+              </div>
+              <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between text-sm text-white/70">
+                <span>Signed in as <strong className="text-white">{displayName}</strong></span>
+                <button onClick={() => auth.signOut()} className="px-3 text-rose-300 flex items-center gap-1.5">
+                  <LogOut className="w-4 h-4" /> Sign out
+                </button>
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 
-      {/* MOBILE BOTTOM NAVIGATION BAR */}
-      <div className="fixed bottom-3 left-3 right-3 z-40 lg:hidden max-w-md mx-auto">
-        <div className="h-14 px-3 bg-[#0d0b12]/90 backdrop-blur-2xl border border-white/15 rounded-2xl shadow-2xl flex items-center justify-around">
-          {navItems.slice(0, 5).map((item) => {
+      {/* PHONE: BOTTOM BAR */}
+      <nav
+        data-testid="bottom-nav"
+        aria-label="Main"
+        className="fixed bottom-0 inset-x-0 z-50 lg:hidden bg-[#0d0b12]/95 backdrop-blur-xl border-t border-white/10 pb-[env(safe-area-inset-bottom)]"
+      >
+        <div className="max-w-md mx-auto h-16 px-1 grid grid-cols-5">
+          {barItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeSpace === item.id;
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveSpace(item.id as AppSpace)}
-                className={`flex flex-col items-center justify-center w-12 h-12 rounded-xl transition-all relative ${
-                  isActive ? "text-rose-400 scale-105" : "text-white/40 hover:text-white"
-                }`}
+                onClick={() => openSpace(item.id)}
+                aria-current={isActive ? "page" : undefined}
+                className={`relative flex flex-col items-center justify-center gap-0.5 transition-colors ${isActive ? "text-rose-300" : "text-white/70"}`}
               >
-                <Icon className="w-5 h-5" />
-                <span className="text-[9px] font-mono mt-0.5">{item.label.split(" ")[0]}</span>
-                {item.hasBadge && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 absolute top-1.5 right-2" />
-                )}
+                <Icon className="w-[22px] h-[22px]" />
+                <span className="text-[11px] leading-none">{item.short}</span>
+                {item.hasBadge && <span className="absolute top-2.5 left-1/2 ml-2.5 w-2 h-2 rounded-full bg-amber-400" aria-label="Today's gift is waiting" />}
               </button>
             );
           })}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-expanded={mobileMenuOpen}
+            data-testid="menu-toggle"
+            className={`flex flex-col items-center justify-center gap-0.5 transition-colors ${mobileMenuOpen || moreIsActive ? "text-rose-300" : "text-white/70"}`}
+          >
+            {mobileMenuOpen ? <X className="w-[22px] h-[22px]" /> : <Menu className="w-[22px] h-[22px]" />}
+            <span className="text-[11px] leading-none">More</span>
+          </button>
         </div>
-      </div>
+      </nav>
 
       {/* MAIN SPACES CONTAINER */}
-      <main className="pt-24 sm:pt-28">
+      <main className="pt-2 lg:pt-28">
         <AnimatePresence mode="wait">
           {activeSpace === "home" && (
             <motion.div

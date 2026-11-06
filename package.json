@@ -14,7 +14,8 @@
     "test:unit": "tsx tests/model.unit.test.ts",
     "test:rules": "firebase emulators:exec --config firebase.emulator.json --only firestore \"tsx tests/rules.emulator.test.ts\" --project studio-9165894196-8cf76",
     "test:server": "firebase emulators:exec --config firebase.emulator.json --only firestore,auth \"tsx tests/server.integration.test.ts\" --project studio-9165894196-8cf76",
-    "test": "npm run lint && npm run test:unit && npm run test:rules && npm run test:server"
+    "test": "npm run lint && npm run test:unit && npm run test:rules && npm run test:server",
+    "test:ui": "firebase emulators:exec --config firebase.emulator.json --only firestore,auth \"tsx tests/ui/mobile.audit.ts\" --project studio-9165894196-8cf76"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",
@@ -42,6 +43,7 @@
     "@types/node": "^22.14.0",
     "autoprefixer": "^10.4.21",
     "esbuild": "^0.25.0",
+    "playwright-core": "^1.65.0",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",

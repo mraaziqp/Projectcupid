@@ -19,6 +19,7 @@ import { UserProfile, MessageBoxItem, ReasonVaultItem, TimelineMoment } from "..
 import { getOrSelectDailyBox, getTodayDateStr } from "../lib/messageBoxService";
 import { INITIAL_365_REASONS, INITIAL_TIMELINE } from "../lib/seedData";
 import DailyMemory from "./garden/DailyMemory";
+import { ChevronDown } from "lucide-react";
 import EmotionalWeather from "./EmotionalWeather";
 import { format } from "date-fns";
 
@@ -69,22 +70,22 @@ export default function HomeDashboard({
   };
 
   return (
-    <div className="space-y-10 max-w-5xl mx-auto px-4 sm:px-6">
+    <div className="space-y-6 sm:space-y-10 max-w-5xl mx-auto px-4 sm:px-6">
       {/* Warm Welcome Banner */}
-      <div className="text-center space-y-3 pt-2">
+      <div className="text-center space-y-2 sm:space-y-3 pt-1 sm:pt-2">
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs tracking-widest uppercase font-mono"
+          className="hidden sm:inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs tracking-widest uppercase font-mono"
         >
           <Heart className="w-3.5 h-3.5 fill-rose-300" />
           <span>Our Little Universe</span>
         </motion.div>
 
-        <h1 className="text-4xl sm:text-6xl font-serif-title font-light text-white tracking-tight">
+        <h1 className="text-3xl sm:text-6xl font-serif-title font-light text-white tracking-tight">
           Welcome Home, <span className="text-rose-200 italic">{displayName}</span>
         </h1>
-        <p className="text-sm sm:text-base text-white/60 max-w-lg mx-auto font-light leading-relaxed">
+        <p className="hidden sm:block text-base text-white/60 max-w-lg mx-auto font-light leading-relaxed">
           A private digital home for our marriage, love, daily surprises, and wellbeing.
         </p>
       </div>
@@ -94,20 +95,15 @@ export default function HomeDashboard({
         <DailyMemory uid={currentProfile.uid} onOpenGarden={(id) => (onOpenMemory ? onOpenMemory(id) : onNavigate("garden"))} />
       )}
 
-      {/* EMOTIONAL WEATHER: how each of us is today */}
-      {currentProfile?.uid && (
-        <EmotionalWeather userId={currentProfile.uid} userEmail={currentProfile.email} currentProfile={currentProfile} partnerProfile={partnerProfile} />
-      )}
-
       {/* SIGNATURE HIGHLIGHT: TODAY'S MESSAGE BOX WIDGET */}
       <div className="relative">
-        <GlassPanel className="p-6 sm:p-8 rounded-3xl border border-amber-500/25 bg-gradient-to-r from-amber-500/10 via-rose-500/5 to-purple-900/10 relative overflow-hidden shadow-2xl">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-5">
+        <GlassPanel className="p-4 sm:p-8 rounded-3xl border border-amber-500/25 bg-gradient-to-r from-amber-500/10 via-rose-500/5 to-purple-900/10 relative overflow-hidden shadow-2xl">
+          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 md:gap-6">
+            <div className="flex items-center gap-4 sm:gap-5">
               <motion.div
                 animate={{ y: [0, -4, 0] }}
                 transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut" }}
-                className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-amber-400 to-rose-500 p-[1.5px] shadow-[0_0_20px_rgba(245,158,11,0.25)] shrink-0 flex items-center justify-center cursor-pointer"
+                className="shrink-0 w-14 h-14 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-amber-400 to-rose-500 p-[1.5px] shadow-[0_0_20px_rgba(245,158,11,0.25)] shrink-0 flex items-center justify-center cursor-pointer"
                 onClick={() => onNavigate("boxes")}
               >
                 <div className="w-full h-full bg-[#141117] rounded-[15px] flex items-center justify-center">
@@ -115,8 +111,8 @@ export default function HomeDashboard({
                 </div>
               </motion.div>
 
-              <div className="space-y-1 text-center md:text-left">
-                <div className="flex items-center justify-center md:justify-start gap-2">
+              <div className="space-y-1 text-left min-w-0">
+                <div className="hidden sm:flex items-center justify-start gap-2">
                   <span className="text-[11px] uppercase font-mono tracking-widest text-amber-300">
                     Signature Daily Ritual
                   </span>
@@ -124,10 +120,10 @@ export default function HomeDashboard({
                     {getTodayDateStr()}
                   </span>
                 </div>
-                <h3 className="text-xl sm:text-2xl font-serif-title font-light text-white">
+                <h3 className="text-lg sm:text-2xl leading-snug font-serif-title font-light text-white">
                   {isBoxOpened ? "Today's Message Has Been Revealed" : "A Little Something is Waiting for You"}
                 </h3>
-                <p className="text-xs sm:text-sm text-white/60 font-light max-w-md">
+                <p className="hidden sm:block text-sm text-white/60 font-light max-w-md">
                   {isBoxOpened
                     ? dailyBoxMessage?.content.substring(0, 80) + "..."
                     : "Tap to open today's sealed virtual message box and discover what was written for you."}
@@ -210,6 +206,25 @@ export default function HomeDashboard({
           </div>
         </GlassPanel>
       </div>
+
+      {/* EMOTIONAL WEATHER: how each of us is today (folded on phones, open on desktop) */}
+      {currentProfile?.uid && (
+        <details
+          open={typeof window !== "undefined" && window.innerWidth >= 1024}
+          className="group rounded-3xl border border-white/10 bg-white/[0.03] overflow-hidden"
+        >
+          <summary className="list-none cursor-pointer px-5 py-4 flex items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+            <span>
+              <span className="block font-serif text-lg text-white">How are you today?</span>
+              <span className="block text-xs text-white/60">Share your emotional weather with each other</span>
+            </span>
+            <ChevronDown className="w-5 h-5 text-white/60 transition-transform group-open:rotate-180 shrink-0" />
+          </summary>
+          <div className="p-2 sm:p-4 border-t border-white/5">
+            <EmotionalWeather userId={currentProfile.uid} userEmail={currentProfile.email} currentProfile={currentProfile} partnerProfile={partnerProfile} />
+          </div>
+        </details>
+      )}
 
       {/* QUICK ACCESS PORTAL CARDS (THE 6 SPACES) */}
       <div className="space-y-4">

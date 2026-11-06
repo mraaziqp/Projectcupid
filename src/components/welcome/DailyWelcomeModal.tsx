@@ -181,6 +181,7 @@ export const DailyWelcomeModal: React.FC<DailyWelcomeModalProps> = ({
               <AntiqueEnvelope
                 isOpen={isOpenState}
                 onOpen={handleOpenSurprise}
+                recipientName={userRole === "admin" ? "Raaziq" : "Razia"}
               />
             )}
 
