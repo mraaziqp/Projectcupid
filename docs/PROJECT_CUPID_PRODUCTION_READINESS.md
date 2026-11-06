@@ -22,4 +22,4 @@ Rollback: `git show v4.1.4-prepared:firestore.rules > firestore.rules`, deploy; 
 
 ## Git
 
-`main` on GitHub still holds 4.1.4 until the feature branch is merged. Production was deployed from the CLI. Do not push old code to `main`: Vercel may redeploy it.
+`main` on GitHub is the released code. Pushes to `main` can redeploy production.
