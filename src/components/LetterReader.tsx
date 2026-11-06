@@ -28,7 +28,6 @@ interface LetterReply {
   createdAt?: any;
 }
 
-const BRIDGE_SECRET = "cupid-forever-bridge-2024";
 
 export default function LetterReader({
   letter,
@@ -103,7 +102,9 @@ export default function LetterReader({
       await notifyPartner(
         currentUserId,
         `${currentUserName || "Your love"} replied to your letter`,
-        replyText.trim()
+        replyText.trim(),
+        undefined,
+        "letter_reply"
       );
 
       setReplyText("");
@@ -233,24 +234,8 @@ export default function LetterReader({
         await updateDoc(doc(db, "letters", letter.id), { isFavorite: newFav });
       }
 
-      if (newFav && isPersistedLetter) {
-        // Push to Forever Book Bridge
-        await fetch("/api/bridge/favorite", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Bridge-Secret": BRIDGE_SECRET
-          },
-          body: JSON.stringify({
-            letterId: letter.id,
-            title: letter.title,
-            content: letter.content,
-            date: date.toISOString()
-          })
-        });
-      }
     } catch (e) {
-      console.error("Bridge Error:", e);
+      console.error("Could not update favourite:", e);
     }
   };
 

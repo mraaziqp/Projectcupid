@@ -28,8 +28,16 @@ import {
 import GlassPanel from "./GlassPanel";
 import { UserProfile, MessageBoxItem, ReasonVaultItem, TimelineMoment, DreamBoardItem, LoveVoucher, TimeCapsule } from "../types";
 import { getMessageBoxes, addMessageBoxContribution, reshuffleMessageBoxes } from "../lib/messageBoxService";
-import { JARVIS_CUPID_TOOLS, getJarvisAuditLogs, JarvisAuditLog } from "../lib/jarvisIntegration";
-import { dispatchEmailNotification } from "../lib/emailService";
+import { JarvisDashboard } from "./JarvisDashboard";
+import { apiFetch } from "../lib/api";
+import { collection as fsCollection, getDocs as fsGetDocs, orderBy as fsOrderBy, limit as fsLimit, query as fsQuery } from "firebase/firestore";
+import { db as fsDb } from "../lib/firebase";
+
+type JarvisAuditLog = { id?: string; action: string; status: string; resultSummary?: string; timestamp: any };
+async function getJarvisAuditLogs(n: number): Promise<JarvisAuditLog[]> {
+  const snap = await fsGetDocs(fsQuery(fsCollection(fsDb, "jarvis_audit_logs"), fsOrderBy("timestamp", "desc"), fsLimit(n)));
+  return snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+}
 import { INITIAL_365_REASONS, INITIAL_TIMELINE, INITIAL_DREAM_BOARD, INITIAL_LOVE_VOUCHERS } from "../lib/seedData";
 
 interface AdminCommandCentreProps {
@@ -77,7 +85,7 @@ export default function AdminCommandCentre({
   const [capsules, setCapsules] = useState<TimeCapsule[]>([]);
 
   // Email test state
-  const [testEmailAddress, setTestEmailAddress] = useState(partnerProfile?.email || "raziashade4@gmail.com");
+  
   const [isSendingTestEmail, setIsSendingTestEmail] = useState(false);
   const [testEmailResult, setTestEmailResult] = useState<string | null>(null);
 
@@ -127,31 +135,17 @@ export default function AdminCommandCentre({
     }
   };
 
-  // Test Email Sender
+  // Live mail checks: tests SaveState's mail relay, Resend and FCM from the server. Sends no email to anyone.
   const handleSendTestEmail = async () => {
-    if (!testEmailAddress.trim()) return;
     setIsSendingTestEmail(true);
     setTestEmailResult(null);
-
     try {
-      const res = await dispatchEmailNotification({
-        recipientEmail: testEmailAddress.trim(),
-        recipientName: "Razia",
-        senderName: "Raaziq (Admin Test)",
-        eventType: "message_box.daily_ready",
-        title: "Project Cupid 4.0 Verified Delivery Test",
-        content: "This is an authentic delivery test from Project Cupid 4.0 Admin Command Centre to verify Resend domain connectivity.",
-        deepLink: window.location.origin
-      });
-
-      if (res.success) {
-        setTestEmailResult(`✓ Test email delivered successfully to ${testEmailAddress}`);
-        showToast("Test email successfully dispatched via Resend!");
-      } else {
-        setTestEmailResult(`✗ Dispatch error: ${res.error || "Delivery failed"}`);
-      }
+      const d = await apiFetch<{ checks: Record<string, { ok: boolean; detail: string }> }>("admin/diagnostics");
+      const pick = ["savestate", "resend", "fcm", "firebase_admin"];
+      const lines = pick.filter((k) => d.checks[k]).map((k) => `${d.checks[k].ok ? "✓" : "✗"} ${k}: ${d.checks[k].detail}`);
+      setTestEmailResult(lines.join(" | "));
     } catch (err: any) {
-      setTestEmailResult(`✗ Network error: ${err.message}`);
+      setTestEmailResult(`✗ ${err.message}`);
     } finally {
       setIsSendingTestEmail(false);
     }
@@ -581,87 +575,36 @@ export default function AdminCommandCentre({
             <div className="p-4 bg-white/5 rounded-2xl border border-white/10 space-y-3">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-stone-300">Configured Sender Domain:</span>
-                <span className="font-mono text-rose-300 font-bold">cupid@verifiedbizlink.co.za</span>
+                <span className="font-mono text-rose-300 font-bold">SaveState mail (noreply@savestate.co.za), Resend as fallback</span>
               </div>
               <div className="flex items-center justify-between text-xs">
                 <span className="text-stone-300">Provider Service:</span>
-                <span className="font-mono text-emerald-400 font-semibold">Resend API v4 (Idempotent)</span>
+                <span className="font-mono text-emerald-400 font-semibold">Recipient chosen by the server: always your partner</span>
               </div>
             </div>
 
-            {/* Test Email Dispatch Form */}
+            {/* Live delivery checks */}
             <div className="pt-2 space-y-3">
-              <label className="text-xs font-mono uppercase tracking-wider text-stone-300 block">
-                Dispatch Real Delivery Test
-              </label>
-              <div className="flex flex-col sm:flex-row items-center gap-3">
-                <input
-                  type="email"
-                  value={testEmailAddress}
-                  onChange={e => setTestEmailAddress(e.target.value)}
-                  placeholder="Enter recipient email (e.g. raziashade4@gmail.com)"
-                  className="w-full sm:flex-1 px-4 py-2.5 bg-black/40 border border-white/20 rounded-xl text-xs text-white placeholder-stone-500 focus:outline-none focus:border-rose-500 font-mono"
-                />
-                <button
-                  onClick={handleSendTestEmail}
-                  disabled={isSendingTestEmail}
-                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-rose-500 hover:from-rose-500 hover:to-rose-400 text-white text-xs font-serif font-semibold tracking-wide transition flex items-center justify-center gap-1.5 disabled:opacity-50"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>{isSendingTestEmail ? "Sending..." : "Dispatch Test Email"}</span>
-                </button>
-              </div>
-
+              <label className="text-xs font-mono uppercase tracking-wider text-stone-300 block">Check mail and push from the server</label>
+              <p className="text-xs text-stone-400">Tests SaveState's mail relay, the Resend key and Firebase push credentials. No email is sent to anyone.</p>
+              <button
+                onClick={handleSendTestEmail}
+                disabled={isSendingTestEmail}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-rose-500 text-white text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-50"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>{isSendingTestEmail ? "Checking..." : "Run delivery checks"}</span>
+              </button>
               {testEmailResult && (
-                <div className={`p-3 rounded-xl border text-xs font-mono mt-2 ${
-                  testEmailResult.startsWith("✓")
-                    ? "bg-emerald-950/40 border-emerald-500/40 text-emerald-200"
-                    : "bg-rose-950/40 border-rose-500/40 text-rose-200"
-                }`}>
-                  {testEmailResult}
-                </div>
+                <pre className="p-3 rounded-xl border text-xs font-mono mt-2 whitespace-pre-wrap bg-black/30 border-white/15 text-stone-200">{testEmailResult}</pre>
               )}
             </div>
           </GlassPanel>
         </div>
       )}
 
-      {/* TAB 4: JARVIS ECOSYSTEM BRIDGE */}
-      {activeTab === "jarvis" && (
-        <div className="space-y-6 animate-fadeIn">
-          <GlassPanel className="p-6 rounded-2xl border-white/10 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-serif text-white font-medium flex items-center gap-2">
-                  <Bot className="w-5 h-5 text-amber-400" />
-                  <span>Jarvis Second Brain Bridge (v2.5)</span>
-                </h3>
-                <p className="text-xs text-stone-400 font-serif italic">
-                  8 registered tool schemas matching Second Brain tool definition contract.
-                </p>
-              </div>
-
-              <span className="px-3 py-1 rounded-full text-xs font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                Bridge Active
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-              {JARVIS_CUPID_TOOLS.map(t => (
-                <div key={t.name} className="p-3.5 rounded-xl bg-white/5 border border-white/10 space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold text-rose-300">{t.name}</span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/10 text-stone-300 capitalize">
-                      {t.category}
-                    </span>
-                  </div>
-                  <p className="text-xs text-stone-400 font-sans">{t.description}</p>
-                </div>
-              ))}
-            </div>
-          </GlassPanel>
-        </div>
-      )}
+      {/* TAB 4: JARVIS ECOSYSTEM */}
+      {activeTab === "jarvis" && <JarvisDashboard isAdmin />}
 
       {/* TAB 5: OUR STORY & TIMELINE */}
       {activeTab === "content_timeline" && (

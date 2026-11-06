@@ -2,11 +2,13 @@
   "firestore": [
     {
       "database": "ai-studio-60c2955c-bef0-41d4-8dcc-ddbec95be891",
-      "rules": "firestore.rules"
+      "rules": "firestore.rules",
+      "indexes": "firestore.indexes.json"
     },
     {
       "database": "(default)",
-      "rules": "firestore.rules"
+      "rules": "firestore.rules",
+      "indexes": "firestore.indexes.json"
     }
   ]
 }

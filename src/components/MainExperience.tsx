@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Heart,
@@ -16,7 +16,8 @@ import {
   Bell,
   BookOpen,
   Shield,
-  HelpCircle
+  HelpCircle,
+  Flower2
 } from "lucide-react";
 import { User as FirebaseUser } from "firebase/auth";
 import { UserProfile, MessageBoxItem, DailyBoxSelection } from "../types";
@@ -35,6 +36,7 @@ import SettingsScreen from "./SettingsScreen";
 import AdminCommandCentre from "./AdminCommandCentre";
 import AdminEditor from "./AdminEditor";
 import LetterReader from "./LetterReader";
+const MemoryGarden = lazy(() => import("./garden/MemoryGarden"));
 
 import { DailyWelcomeModal } from "./welcome/DailyWelcomeModal";
 import { OnboardingModal } from "./help/OnboardingModal";
@@ -51,6 +53,7 @@ interface MainExperienceProps {
 
 export type AppSpace =
   | "home"
+  | "garden"
   | "love"
   | "boxes"
   | "memory_book"
@@ -68,6 +71,7 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isPreviewingPartner, setIsPreviewingPartner] = useState(false);
   const [selectedLetter, setSelectedLetter] = useState<any | null>(null);
+  const [gardenMemoryId, setGardenMemoryId] = useState<string | null>(null);
 
   // Daily Welcome & Onboarding State
   const [showDailyWelcome, setShowDailyWelcome] = useState(false);
@@ -139,6 +143,7 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
 
   const navItems = [
     { id: "home", label: "Home", icon: Home },
+    { id: "garden", label: "Memory Garden", icon: Flower2 },
     { id: "love", label: "Our Love", icon: BookHeart },
     { id: "boxes", label: "Message Boxes", icon: Gift, hasBadge: isDailyDeferred },
     { id: "memory_book", label: "Memory Book", icon: BookOpen },
@@ -165,7 +170,7 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
                 Project Cupid
               </span>
               <span className="text-[10px] text-rose-300 block font-mono -mt-1 tracking-widest">
-                Our Little Universe • 4.0
+                Our Little Universe • 5.0
               </span>
             </div>
           </div>
@@ -374,6 +379,7 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
                 partnerProfile={partnerProfile}
                 onNavigate={(tab) => setActiveSpace(tab as AppSpace)}
                 allLetters={letters}
+                onOpenMemory={(id) => { setGardenMemoryId(id ?? null); setActiveSpace("garden"); }}
               />
             </motion.div>
           )}
@@ -407,6 +413,25 @@ export default function MainExperience({ user, profile }: MainExperienceProps) {
                 currentProfile={profile}
                 partnerProfile={partnerProfile}
               />
+            </motion.div>
+          )}
+
+          {activeSpace === "garden" && (
+            <motion.div
+              key="garden"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Suspense fallback={<div className="text-center py-20 text-white/50 text-sm font-serif italic">Opening the garden…</div>}>
+                <MemoryGarden
+                  currentProfile={profile}
+                  partnerProfile={partnerProfile}
+                  initialMemoryId={gardenMemoryId}
+                  onConsumedInitial={() => setGardenMemoryId(null)}
+                />
+              </Suspense>
             </motion.div>
           )}
 

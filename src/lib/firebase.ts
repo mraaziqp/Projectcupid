@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInAnonymously } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithCustomToken } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 import firebaseConfig from '../../firebase-applet-config.json';
@@ -24,13 +24,28 @@ export async function signIn() {
   }
 }
 
-export async function signInAsTest() {
+/**
+ * Sign in with a SaveState username and password. SaveState checks them; the
+ * Cupid server then hands back a Firebase token for the linked Cupid account.
+ */
+export async function signInWithSaveState(identifier: string, password: string) {
+  let res: Response;
   try {
-    return await signInAnonymously(auth);
-  } catch (error: any) {
-    console.error('Test sign in failed:', error);
-    throw error;
+    res = await fetch('/api/auth/savestate/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier, password }),
+    });
+  } catch {
+    throw new Error('You seem to be offline.');
   }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data?.customToken) {
+    const err = new Error(data?.error || 'Sign-in failed. Please try again.') as Error & { code?: string };
+    err.code = data?.code;
+    throw err;
+  }
+  return signInWithCustomToken(auth, data.customToken);
 }
 
 export const signOut = () => auth.signOut();

@@ -6,3 +6,9 @@ coverage/
 *.log
 .env*
 !.env.example
+.vercel
+
+.vercel
+.env*.local
+server.pid
+*.zip

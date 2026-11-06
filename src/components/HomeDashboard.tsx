@@ -18,6 +18,8 @@ import GlassPanel from "./GlassPanel";
 import { UserProfile, MessageBoxItem, ReasonVaultItem, TimelineMoment } from "../types";
 import { getOrSelectDailyBox, getTodayDateStr } from "../lib/messageBoxService";
 import { INITIAL_365_REASONS, INITIAL_TIMELINE } from "../lib/seedData";
+import DailyMemory from "./garden/DailyMemory";
+import EmotionalWeather from "./EmotionalWeather";
 import { format } from "date-fns";
 
 interface HomeDashboardProps {
@@ -25,12 +27,14 @@ interface HomeDashboardProps {
   partnerProfile?: UserProfile | null;
   onNavigate: (tabId: string) => void;
   allLetters: any[];
+  onOpenMemory?: (memoryId?: string) => void;
 }
 
 export default function HomeDashboard({
   currentProfile,
   partnerProfile,
   onNavigate,
+  onOpenMemory,
   allLetters
 }: HomeDashboardProps) {
   const [dailyBoxMessage, setDailyBoxMessage] = useState<MessageBoxItem | null>(null);
@@ -84,6 +88,16 @@ export default function HomeDashboard({
           A private digital home for our marriage, love, daily surprises, and wellbeing.
         </p>
       </div>
+
+      {/* THE MEMORY GARDEN: TODAY'S MEMORY */}
+      {currentProfile?.uid && (
+        <DailyMemory uid={currentProfile.uid} onOpenGarden={(id) => (onOpenMemory ? onOpenMemory(id) : onNavigate("garden"))} />
+      )}
+
+      {/* EMOTIONAL WEATHER: how each of us is today */}
+      {currentProfile?.uid && (
+        <EmotionalWeather userId={currentProfile.uid} userEmail={currentProfile.email} currentProfile={currentProfile} partnerProfile={partnerProfile} />
+      )}
 
       {/* SIGNATURE HIGHLIGHT: TODAY'S MESSAGE BOX WIDGET */}
       <div className="relative">

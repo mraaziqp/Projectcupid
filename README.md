@@ -1,61 +1,37 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Project Cupid
 
-# Run and deploy your AI Studio app
+A private space for Raaziq and Razia: letters, message boxes, her wellbeing sanctuary, and (5.0) **The Memory Garden — a living story of us**.
 
-This contains everything you need to run your app locally.
+- **Client:** React 19 + Vite + Tailwind, installable PWA.
+- **Data:** Firestore, named database `ai-studio-60c2955c-bef0-41d4-8dcc-ddbec95be891` in project `studio-9165894196-8cf76`. Security rules in [firestore.rules](firestore.rules).
+- **Server:** one API router ([lib/server/router.ts](lib/server/router.ts)) served by a single Vercel function ([api/index.ts](api/index.ts)) and by [server.ts](server.ts) locally.
+- **Ecosystem:** sign-in, photos and mail through **SaveState** (savestate.co.za); activity and shared memories to **Jarvis** (jarvis.savestate.co.za); read-only imports from **WeddingApp**.
 
-View your app in AI Studio: https://ai.studio/apps/60c2955c-bef0-41d4-8dcc-ddbec95be891
+## Run locally
 
-## Run Locally
+```bash
+npm install
+cp .env.example .env.local   # fill in what you need; without FIREBASE_SERVICE_ACCOUNT the API answers "not configured"
+npm run dev                  # http://localhost:3000
+```
 
-**Prerequisites:**  Node.js
+## Test
 
+Needs Java 11+ and the Firebase CLI (`npm i -g firebase-tools`). If `DEBUG=true` is set in your shell, unset it first — the Firebase CLI then prints your whole environment.
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+```bash
+npm test             # typecheck + all suites below
+npm run test:unit    # Memory Garden logic
+npm run test:rules   # Firestore rules in the emulator, against the named database
+npm run test:server  # the API end to end: emulators + local fakes of SaveState, Resend, Gemini, Jarvis, WeddingApp
+```
 
-## Deploy To Vercel
+The emulator uses [firebase.emulator.json](firebase.emulator.json): the emulator cannot read the multi-database `firestore` array in [firebase.json](firebase.json) and would otherwise run with no rules at all.
 
-This project is configured for Vercel with:
+## Deploy
 
-- Frontend build output from Vite (`dist`)
-- Node.js serverless API routes under `api/`
-- SPA fallback routing for client-side navigation
+Vercel builds the client (`npm run build:client` → `dist`) and the API function. Environment variables are listed in [.env.example](.env.example). Firestore rules and indexes are deployed separately with `firebase deploy --only firestore` (both databases are listed in firebase.json).
 
-### 1) Import the repository
+## Documentation
 
-- In Vercel, click **Add New Project** and import:
-  `https://github.com/mraaziqp/Projectcupid.git`
-
-### 2) Build settings
-
-Vercel should auto-detect the settings from `vercel.json`. If you set them manually, use:
-
-- Build Command: `npm run build:client`
-- Output Directory: `dist`
-
-### 3) Environment variables
-
-Add these in Vercel Project Settings -> Environment Variables:
-
-- `GEMINI_API_KEY` (required)
-- `OLLAMA_API_URL` (required for Admin Editor refine/proofread)
-- `OLLAMA_API_KEY` (required for Admin Editor refine/proofread)
-- `OLLAMA_MODEL` (optional; defaults to `llama3`)
-- `BRIDGE_SECRET` (optional; defaults to `cupid-forever-bridge-2024` if omitted)
-
-### 4) Redeploy
-
-After adding environment variables, trigger a redeploy from the Vercel dashboard.
-
-### 5) Quick verification
-
-After deployment:
-
-- Open `/api/health` and confirm the response is `{ "status": "ok" }`
-- Use the app UI to generate a letter and confirm API calls succeed
+See [docs/](docs/): 5.0 implementation, architecture, credentials, the SaveState/WeddingApp audit, test report and production readiness. Older release notes are in [docs/history/](docs/history/).

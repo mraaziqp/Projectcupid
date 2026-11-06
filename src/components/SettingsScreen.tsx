@@ -13,8 +13,10 @@ import {
 } from "lucide-react";
 import GlassPanel from "./GlassPanel";
 import { UserProfile } from "../types";
-import { auth } from "../lib/firebase";
+import { auth, db } from "../lib/firebase";
+import { doc, updateDoc } from "firebase/firestore";
 import { JarvisDashboard } from "./JarvisDashboard";
+import SaveStatePanel from "./SaveStatePanel";
 
 interface SettingsScreenProps {
   currentProfile: UserProfile | null;
@@ -29,10 +31,12 @@ export default function SettingsScreen({
   onPreviewPartnerRole,
   isPreviewingPartner = false
 }: SettingsScreenProps) {
-  const [activeTab, setActiveTab] = useState<"general" | "notifications" | "jarvis">("general");
-  const [notifyDailyMessage, setNotifyDailyMessage] = useState(true);
-  const [notifySpecialDates, setNotifySpecialDates] = useState(true);
-  const [notifyQuietHours, setNotifyQuietHours] = useState(true);
+  const [activeTab, setActiveTab] = useState<"general" | "notifications" | "savestate" | "jarvis">("general");
+  const prefs = (currentProfile as any)?.notificationPrefs ?? {};
+  const [notifyDailyMessage, setNotifyDailyMessage] = useState(prefs.dailyMessage !== false);
+  const [notifySpecialDates, setNotifySpecialDates] = useState(prefs.specialDates !== false);
+  const [notifyQuietHours, setNotifyQuietHours] = useState(prefs.discreet !== false);
+  const [emailNotifications, setEmailNotifications] = useState((currentProfile as any)?.emailNotifications !== false);
   const [toastMsg, setToastMsg] = useState("");
 
   const showToast = (msg: string) => {
@@ -40,8 +44,18 @@ export default function SettingsScreen({
     setTimeout(() => setToastMsg(""), 3500);
   };
 
-  const handleSaveNotifications = () => {
-    showToast("Discreet notification preferences updated.");
+  const handleSaveNotifications = async () => {
+    if (!currentProfile?.uid) return;
+    try {
+      await updateDoc(doc(db, "users", currentProfile.uid), {
+        emailNotifications,
+        notificationPrefs: { dailyMessage: notifyDailyMessage, specialDates: notifySpecialDates, discreet: notifyQuietHours },
+      });
+      showToast("Notification preferences saved.");
+    } catch (e) {
+      console.error("Could not save notification preferences:", e);
+      showToast("Those preferences weren't saved. Please try again.");
+    }
   };
 
   return (
@@ -80,6 +94,17 @@ export default function SettingsScreen({
           >
             <Bell className="w-3.5 h-3.5" />
             <span>Discreet Notifications</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("savestate")}
+            className={`px-4 py-2 rounded-xl text-xs font-medium transition flex items-center gap-1.5 whitespace-nowrap ${
+              activeTab === "savestate"
+                ? "bg-rose-500/20 text-rose-200 border border-rose-500/30"
+                : "text-white/60 hover:text-white hover:bg-white/5"
+            }`}
+          >
+            <Lock className="w-3.5 h-3.5" />
+            <span>SaveState</span>
           </button>
           <button
             onClick={() => setActiveTab("jarvis")}
@@ -231,6 +256,19 @@ export default function SettingsScreen({
 
               <label className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 cursor-pointer">
                 <div>
+                  <strong className="text-white block font-medium">Email me too</strong>
+                  <span className="text-white/50">Letters and little surprises also arrive by email (sent through SaveState). Feelings and wellbeing never do.</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={emailNotifications}
+                  onChange={(e) => setEmailNotifications(e.target.checked)}
+                  className="accent-amber-500 rounded"
+                />
+              </label>
+
+              <label className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 cursor-pointer">
+                <div>
                   <strong className="text-white block font-medium">Discreet Wording Only</strong>
                   <span className="text-white/50">Never mention medical or period words on lockscreen</span>
                 </div>
@@ -256,8 +294,12 @@ export default function SettingsScreen({
       )}
 
       {/* Tab: Jarvis Ecosystem Dashboard */}
+      {activeTab === "savestate" && (
+        <SaveStatePanel currentProfile={currentProfile} partnerProfile={partnerProfile} />
+      )}
+
       {activeTab === "jarvis" && (
-        <JarvisDashboard />
+        <JarvisDashboard isAdmin={currentProfile?.role === "admin"} />
       )}
     </div>
   );

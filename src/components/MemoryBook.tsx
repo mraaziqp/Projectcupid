@@ -59,8 +59,12 @@ export const MemoryBook: React.FC<MemoryBookProps> = ({
   }, []);
 
   const loadMemories = async () => {
-    const list = await getScrapbookMemories();
-    setMemories(list);
+    try {
+      setMemories(await getScrapbookMemories());
+    } catch (e) {
+      console.error("Could not load the Memory Book:", e);
+      showToast("Couldn't load the Memory Book. Check your connection and try again.");
+    }
   };
 
   const handleCreateMemory = async (e: React.FormEvent) => {
@@ -95,21 +99,22 @@ export const MemoryBook: React.FC<MemoryBookProps> = ({
       showToast("Treasured forever in Our Memory Book!");
     } catch (e) {
       console.error("Failed to add memory:", e);
+      showToast("That memory wasn't saved. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleSyncToEcosystem = async (memory: MemoryBookItem) => {
-    showToast(`Syncing "${memory.title}" with Jarvis Second Brain...`);
+    showToast(`Sharing "${memory.title}" with Jarvis...`);
     const res = await syncMemoryToEcosystem(memory);
     if (res.success) {
-      showToast(`✓ Synced with ecosystem Memory Book!`);
+      showToast("Kept forever: Jarvis has it now.");
       setMemories(prev =>
         prev.map(m => (m.id === memory.id ? { ...m, syncStatus: "synced", externalBridgeId: res.bridgeId } : m))
       );
     } else {
-      showToast(`✗ Sync queued for next heartbeat.`);
+      showToast(`Not shared: ${res.error ?? "Jarvis didn't answer"}. Try again later.`);
     }
   };
 

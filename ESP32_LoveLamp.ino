@@ -22,9 +22,10 @@
 const char* ssid = "YOUR_WIFI_SSID";
 const char* password = "YOUR_WIFI_PASSWORD";
 
-// Your Firebase Project ID (from firebase-applet-config.json)
-const char* firebaseProjectId = "YOUR_PROJECT_ID";
-const char* databaseId = "(default)"; // Change if you used a custom DB ID
+// Project Cupid's lamp endpoint and the CUPID_LAMP_KEY set in Vercel.
+// The endpoint only ever answers how many letters are unread — never their content.
+const char* lampUrl = "https://projectcupid.vercel.app/api/lamp/status";
+const char* lampKey = "YOUR_CUPID_LAMP_KEY";
 
 // Pin configuration
 #define LED_PIN 5
@@ -83,34 +84,16 @@ void connectToWiFi() {
 void checkFirestore() {
   HTTPClient http;
   
-  // REST API URL to query the 'letters' collection for unread, published letters
-  // Note: For simplicity, this uses the open REST API. 
-  // In production, you'd use a restricted API key or secure proxy.
-  String url = "https://firestore.googleapis.com/v1/projects/" + String(firebaseProjectId) + 
-               "/databases/" + String(databaseId) + "/documents/letters";
-  
-  http.begin(url);
+  http.begin(lampUrl);
+  http.addHeader("X-Lamp-Key", lampKey);
   int httpCode = http.GET();
 
   if (httpCode > 0) {
     String payload = http.getString();
-    DynamicJsonDocument doc(8192);
-    deserializeJson(doc, payload);
-
-    JsonArray documents = doc["documents"];
+    StaticJsonDocument<128> doc;
     bool unreadFound = false;
-
-    for (JsonObject letter : documents) {
-      JsonObject fields = letter["fields"];
-      
-      bool isPublished = fields["isPublished"]["booleanValue"];
-      bool isRead = fields["isRead"]["booleanValue"];
-      
-      // Basic check: Is there any published but unread letter?
-      if (isPublished && !isRead) {
-        unreadFound = true;
-        break;
-      }
+    if (httpCode == 200 && !deserializeJson(doc, payload)) {
+      unreadFound = doc["unreadLetters"].as<int>() > 0;
     }
 
     newLetterAvailable = unreadFound;

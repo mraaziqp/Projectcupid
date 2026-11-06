@@ -7,8 +7,13 @@ import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 import { collection, addDoc, Timestamp, query, orderBy, limit, onSnapshot } from "firebase/firestore";
 import { format } from "date-fns";
 import { cn } from "../lib/utils";
-import { generateOllamaDraft } from "../lib/ollama";
-import { notifyPartner } from "../lib/notifications";
+import { sendPartnerNotification } from "../lib/notifications";
+import { apiFetch } from "../lib/api";
+
+async function generateDraft(prompt: string): Promise<string> {
+  const r = await apiFetch<{ text: string }>("ai/letter", { body: { prompt } });
+  return r.text;
+}
 
 export default function AdminEditor({ 
   userId, 
@@ -50,33 +55,24 @@ export default function AdminEditor({
         createdAt: Timestamp.now(),
       });
 
-      // Send beautiful email and push notifications
-      const isRaaziq = userEmail === "mraaziqp@gmail.com" || userEmail === "backupe9@gmail.com";
-      const senderName = isRaaziq ? "Your Husband" : "Your Wife";
-      const partnerEmail = isRaaziq ? "raziashade4@gmail.com" : "mraaziqp@gmail.com";
-      const partnerName = isRaaziq ? "Razia" : "Raaziq";
-
-      // Send beautiful letter email
-      fetch("/api/notify-letter", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: partnerEmail,
-          letterTitle: title,
-          letterContent: content,
-          senderName: senderName,
-          recipientName: partnerName,
-        }),
-      }).catch((err) => console.error("Letter email failed:", err));
-
-      // Also send push notification
-      notifyPartner(userId, `${senderName} sent you a letter`, title, senderName).catch((notifyError) => {
+      // In-app notification, push, and the full letter by email (through SaveState).
+      let delivery = "It's waiting for her in the app.";
+      try {
+        const r = await sendPartnerNotification({
+          kind: "letter",
+          title: `A new letter: ${title}`.slice(0, 160),
+          body: title,
+          emailBody: content,
+        });
+        if (r.email.sent) delivery = "She's been emailed and it's waiting in the app.";
+        else if (r.push.sent) delivery = "She's had a notification and it's waiting in the app.";
+      } catch (notifyError) {
         console.error("Partner notification failed after publishing letter:", notifyError);
-      });
+      }
 
       setTitle("");
       setContent("");
-      alert("Letter successfully transmitted to aurora.");
+      alert(`Letter published. ${delivery}`);
       onPublished?.();
     } catch (e) {
       handleFirestoreError(e, OperationType.WRITE, "letters");
@@ -90,15 +86,15 @@ export default function AdminEditor({
     setAiOptimizing(true);
     try {
       if (!aiLocal) {
-        alert("AI assistant is off. Toggle Ollama AI ON to refine scripts.");
+        alert("AI assistant is off. Turn the AI assistant on to refine drafts.");
         return;
       }
-      const prompt = `You are an AI assistant helping a poet and engineer write a personal letter to his fiancée, Razia. 
+      const prompt = `You are an AI assistant helping a poet and engineer write a personal letter to his wife, Razia.
       The tone should be cinematic, intimate, and sincere. 
       Refine the following draft while keeping its core emotional message:
       
       ${content}`;
-      const refined = await generateOllamaDraft(prompt);
+      const refined = await generateDraft(prompt);
       setContent(refined);
     } catch (e) {
       alert(`AI Refinement failed: ${e instanceof Error ? e.message : "Unknown error"}`);
@@ -112,14 +108,14 @@ export default function AdminEditor({
     setAiProofreading(true);
     try {
       if (!aiLocal) {
-        alert("AI assistant is off. Toggle Ollama AI ON for proofreading.");
+        alert("AI assistant is off. Turn the AI assistant on for proofreading.");
         return;
       }
       const prompt = `You are an expert copyeditor. Fix all spelling and grammatical errors in the following text. Do NOT change the meaning, tone, or emotional resonance of the letter. Output ONLY the corrected text.
       
       Text:
       ${content}`;
-      const corrected = await generateOllamaDraft(prompt);
+      const corrected = await generateDraft(prompt);
       setContent(corrected);
     } catch (e) {
       alert(`Proofreading failed: ${e instanceof Error ? e.message : "Unknown error"}`);
@@ -145,7 +141,7 @@ export default function AdminEditor({
              )}
            >
              <BrainCircuit size={14} />
-             Ollama AI {aiLocal ? "ON" : "OFF"}
+             AI assistant {aiLocal ? "ON" : "OFF"}
            </button>
         </div>
       </div>

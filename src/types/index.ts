@@ -1,3 +1,4 @@
+/** "reader" survives only as a label in old content; it grants no access (see firestore.rules). */
 export type UserRole = "admin" | "sanctuary_owner" | "partner" | "reader";
 
 export interface UserProfile {
@@ -7,6 +8,13 @@ export interface UserProfile {
   displayName: string | null;
   fcmToken?: string;
   photoURL?: string;
+  /** Mirrored from the linked SaveState account by the server. */
+  savestate?: {
+    userId: string; username: string; displayName: string; avatar: string | null; avatarColor: string | null;
+    bio: string | null; mediaAccess: boolean; canUpload: boolean; syncedAt: string;
+  };
+  emailNotifications?: boolean;
+  notificationPrefs?: Record<string, boolean>;
 }
 
 // ==========================================

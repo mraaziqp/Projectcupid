@@ -1,70 +1,73 @@
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import { auth, db, handleFirestoreError, OperationType } from "../lib/firebase";
+import { doc, getDoc, onSnapshot, setDoc } from "firebase/firestore";
+import { auth, db } from "../lib/firebase";
 
-export type UserRole = "admin" | "sanctuary_owner" | "partner" | "reader";
+import type { UserProfile, UserRole } from "../types";
+export type { UserProfile, UserRole };
 
-export interface UserProfile {
-  uid: string;
-  email: string;
-  role: UserRole;
-  displayName: string | null;
-  fcmToken?: string;
-}
+/**
+ * The only accounts that can create a member profile on first sign-in. The
+ * Firestore rules enforce the same list; this copy just avoids a doomed write.
+ */
+const BOOTSTRAP: Record<string, { role: UserRole; displayName: string }> = {
+  "mraaziqp@gmail.com": { role: "admin", displayName: "Raaziq" },
+  "backupe9@gmail.com": { role: "admin", displayName: "Raaziq" },
+  "raziashade4@gmail.com": { role: "sanctuary_owner", displayName: "Razia" },
+};
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [denied, setDenied] = useState<string | null>(null);
 
   useEffect(() => {
-    return onAuthStateChanged(auth, async (firebaseUser) => {
+    let stopProfile: (() => void) | null = null;
+    const stopAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+      stopProfile?.();
+      stopProfile = null;
+      setDenied(null);
       setUser(firebaseUser);
-      
-      if (firebaseUser) {
-        try {
-          // Sync profile with Firestore
-          const userDoc = doc(db, "users", firebaseUser.uid);
-          let snap = await getDoc(userDoc);
-          
-          if (!snap.exists()) {
-            // Identify Raaziq as admin, Razia as sanctuary_owner
-            const email = (firebaseUser.email || "test-user@cupid.com").toLowerCase();
-            const isAdmin = email === "mraaziqp@gmail.com" || email === "backupe9@gmail.com";
-            const isRazia = email === "raziashade4@gmail.com";
-
-            let assignedRole: UserRole = "reader";
-            let defaultName = "Beloved Guest";
-
-            if (isAdmin) {
-              assignedRole = "admin";
-              defaultName = "Raaziq";
-            } else if (isRazia) {
-              assignedRole = "sanctuary_owner";
-              defaultName = "Razia";
-            }
-
-            const initialProfile: UserProfile = {
-              uid: firebaseUser.uid,
-              email: email,
-              role: assignedRole,
-              displayName: firebaseUser.displayName || defaultName,
-            };
-            await setDoc(userDoc, initialProfile);
-            setProfile(initialProfile);
-          } else {
-            setProfile(snap.data() as UserProfile);
-          }
-        } catch (error) {
-          handleFirestoreError(error, OperationType.GET, `users/${firebaseUser?.uid}`);
-        }
-      } else {
+      if (!firebaseUser) {
         setProfile(null);
+        setLoading(false);
+        return;
       }
-      setLoading(false);
+      const ref = doc(db, "users", firebaseUser.uid);
+      try {
+        const snap = await getDoc(ref);
+        if (!snap.exists()) {
+          const email = (firebaseUser.email || "").toLowerCase();
+          const seed = BOOTSTRAP[email];
+          if (!seed || !firebaseUser.emailVerified) {
+            setDenied("This account isn't part of this private space.");
+            setProfile(null);
+            setLoading(false);
+            await auth.signOut();
+            return;
+          }
+          await setDoc(ref, { uid: firebaseUser.uid, email, role: seed.role, displayName: firebaseUser.displayName || seed.displayName });
+        }
+        stopProfile = onSnapshot(
+          ref,
+          (s) => {
+            const data = s.data() as UserProfile | undefined;
+            setProfile(data && ["admin", "sanctuary_owner", "partner"].includes(data.role) ? { ...data, uid: s.id } : null);
+            if (data && !["admin", "sanctuary_owner", "partner"].includes(data.role)) setDenied("This account isn't part of this private space.");
+            setLoading(false);
+          },
+          () => { setProfile(null); setLoading(false); },
+        );
+      } catch (error) {
+        console.error("Could not load your profile:", error);
+        setDenied("Couldn't load your profile. Check your connection and try again.");
+        setProfile(null);
+        setLoading(false);
+      }
     });
+    return () => { stopAuth(); stopProfile?.(); };
   }, []);
 
-  return { user, profile, loading };
+  return { user, profile, loading, denied };
 }

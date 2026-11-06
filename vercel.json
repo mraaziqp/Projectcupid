@@ -4,13 +4,21 @@
   "buildCommand": "npm run build:client",
   "outputDirectory": "dist",
   "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
-    },
+    { "source": "/api/:path*", "destination": "/api/index?__p=:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "crons": [
+    { "path": "/api/cron/daily", "schedule": "15 22 * * *" }
+  ],
+  "headers": [
     {
       "source": "/(.*)",
-      "destination": "/index.html"
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Permissions-Policy", "value": "camera=(self), microphone=(self), geolocation=(self)" }
+      ]
     }
   ]
 }

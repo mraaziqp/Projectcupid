@@ -157,18 +157,7 @@ export default function EmotionalWeather({
         "feeling"
       );
 
-      // Email dispatch
-      fetch("/api/notify-robust", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId,
-          title: "Emotional Weather Updated 🌡️",
-          body: `Status: ${emotion} • Social battery: ${socialBattery}%${bidSuffix}${noteSuffix}`,
-          senderName,
-          theme: "feeling"
-        })
-      }).catch(err => console.error("Email notify error:", err));
+      // Feelings stay in the app and on push; the server never emails them.
 
     } catch (e) {
       handleFirestoreError(e, OperationType.WRITE, "weather");

@@ -16,7 +16,7 @@ const InstallPrompt = lazyWithRetry(() => import("./components/InstallPrompt"));
 const NotificationManager = lazyWithRetry(() => import("./components/NotificationManager"));
 
 export default function App() {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, denied } = useAuth();
 
   if (loading) {
     return (
@@ -46,8 +46,15 @@ export default function App() {
           <InstallPrompt />
           <NotificationManager profile={profile} />
 
-          {!user ? (
-            <AuthScreen />
+          {!user || !profile ? (
+            <>
+              {denied && (
+                <div className="relative z-10 max-w-md mx-auto mt-6 px-4 text-center text-sm text-rose-200 bg-rose-950/40 border border-rose-500/30 rounded-xl p-3">
+                  {denied}
+                </div>
+              )}
+              <AuthScreen />
+            </>
           ) : (
             <>
               {/* Universal Main Experience */}
@@ -59,7 +66,7 @@ export default function App() {
                   Designed with Love for Raaziq & Razia
                 </div>
                 <div className="flex gap-4 font-mono text-[10px]">
-                  <span>Project Cupid v3.0.0</span>
+                  <span>Project Cupid v5.0.0</span>
                   <span>•</span>
                   <span>Private & Encrypted</span>
                 </div>
