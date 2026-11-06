@@ -32,15 +32,20 @@ As the member's own account only, never the brain key: sign-in, profile mirror, 
 
 ## WeddingApp
 
+The first audit looked at a stale copy in `K:\Projects\Wdding 3.0` and wrongly concluded the database was gone. The current app is `H:\ts\weddingapp3.0` (github.com/mraaziqp/weddingapp3.0).
+
 | | |
 |---|---|
-| Repo | github.com/mraaziqp/weddingapp3.0 (`K:\Projects\Wdding 3.0`; `Wedding invitiation Service` is the same repo) |
-| Live site | Vercel project `weddingapp3-0` → www.raziaraaziq.co.za (answers 200) |
-| Stack | Next.js; Supabase (Postgres + Storage) for guests, households, media, timeline, gifts; Vercel Blob; Firebase variables also present |
-| Media | `media` table: `id, guest_id, media_url, media_type (image/video/audio), visibility (public/private), quest_tag, created_at`; files in public bucket `wedding-photos` |
-| RLS | Every table has policy "anon full access" (`using (true) with check (true)`); storage buckets allow anonymous upload. **Anyone with the anon key can read, change or delete every guest record and photo.** |
-| **Status of the database** | **The Supabase project in the repo's `.env.production` no longer resolves (NXDOMAIN on Google DNS), and the Vercel project has no `NEXT_PUBLIC_SUPABASE_*` variables.** There is no reachable WeddingApp database to connect Cupid to. |
+| Live site | Vercel project `weddingapp3-0` → www.raziaraaziq.co.za |
+| Stack | Next.js; Firestore (project `studio-12716644-3255b`, all client access denied, server uses Admin SDK); media in Google Drive |
+| Media API | `GET /api/media?visibility=public` — open, lists only public, unhidden items. `private`/`all` need the admin cookie |
+| Files | `GET /api/media/:id/raw`; `/_next/image` gives resized JPEGs |
+| Live inventory (2026-11-06) | 152 public items: photographer 32 Ceremony + 15 Nikkah; guests 100 photos, 5 videos |
 
-### What Cupid has for it
+### How Cupid uses it
 
-A finished, tested adapter (`previewWedding` / `importRecords` / `mediaFor`): read-only; only `visibility = 'public'` rows; only URLs on WeddingApp's own storage host (prevents a row from making Cupid fetch an arbitrary URL); re-checked on every view; disconnect and reconnect. It is switched off until `WEDDINGAPP_SUPABASE_URL` and `WEDDINGAPP_SUPABASE_ANON_KEY` point at a live project.
+Through the public API only, so Cupid holds **no WeddingApp secret** and cannot see anything private. It re-filters on `visibility` and `hidden`, re-checks before serving a file, uses the optimiser for thumbnails and display copies, and never writes back. Imports are chosen in the preview (there is a "select all"). The memory date is the upload date, tagged `upload date`, because the API doesn't carry the event date.
+
+### Finding in WeddingApp (not changed)
+
+`/api/media/:id/raw` does not check visibility: a private item can be downloaded by anyone who has its Drive id. The ids are long and random, and private items aren't listed publicly, so this is an unguessable link rather than an open door, but the route should refuse non-public files unless the admin cookie is present.

@@ -5,9 +5,9 @@ Run on 2026-11-05 on the home PC. Command: `npm test` (with `DEBUG` unset).
 | Suite | What it exercises | Result |
 |---|---|---|
 | Typecheck (`tsc --noEmit`) | whole repo: client, server, tests | **pass** |
-| Unit (`tests/model.unit.test.ts`) | daily selection, treasures, byte sniffing, limits, ids, config agreement | **21 / 21** |
+| Unit (`tests/model.unit.test.ts`) | daily selection, treasures, byte sniffing, limits, ids, config agreement | **22 / 22** |
 | Rules (`tests/rules.emulator.test.ts`) | real `firestore.rules` in the Firestore emulator, **named database**, Google-style tokens for Raaziq, Razia, a stranger, an unverified allowlisted account, a legacy reader and an anonymous client | **95 / 95** |
-| API integration (`tests/server.integration.test.ts`) | the real router + Firestore and Auth emulators + local fakes of SaveState, Resend, Gemini, Jarvis, WeddingApp; two real member accounts and a stranger | **85 / 85** (run twice) |
+| API integration (`tests/server.integration.test.ts`) | the real router + Firestore and Auth emulators + local fakes of SaveState, Resend, Gemini, Jarvis, WeddingApp; two real member accounts and a stranger | **91 / 91** |
 | Production build | `vite build`; server and API bundles with esbuild | **pass**; Garden is its own lazy chunk; no server code or secrets in the bundle |
 | Local smoke | `npm run dev`: index, Garden modules, `/api/health`, auth routes | **pass**; without a service account the API answers `not_configured` |
 
@@ -31,11 +31,13 @@ Run on 2026-11-05 on the home PC. Command: `npm test` (with `DEBUG` unset).
 - **Ecosystem:** cron sends heartbeat and activity; **log contains no titles, captions, notes or emails**; cron secret enforced; only owners share *shared* memories with Jarvis.
 - **Diagnostics:** every check reported, no secret value in the output.
 
+## Verified against real services (production, 2026-11-06)
+
+Firebase Admin, Firestore, Auth custom tokens, FCM credentials, a real Resend send (to Resend's test address), SaveState reachability and refusal of bad credentials, WeddingApp's public API (152 items), Jarvis tool key, cron secret, and live migration with an idempotent re-run.
+
 ## Not covered yet (honest list)
 
-- **Nothing has run against the real Vercel runtime.** The preview deploy was blocked pending your approval, so `FIREBASE_SERVICE_ACCOUNT`, FCM, real SaveState uploads and mail through the real relay are untested in production.
-- **UI not exercised signed in.** The screens compile and load, but Google sign-in can't be automated here. Desktop and mobile layout, keyboard and screen-reader checks still need a manual pass.
-- Real Jarvis ingestion (Jarvis was down after the power-off; Cupid isn't registered yet).
-- WeddingApp against a real database (none exists).
+- **UI not exercised signed in.** Screens compile and load, but sign-in needs a real person. Phone, desktop, keyboard and screen-reader checks still need a manual pass.
+- Real SaveState upload and mail through the relay (needs a linked member).
 - Real FCM delivery to a device.
-- The Vercel ESM resolution of `lib/server/*.js` imports is the main deployment risk to confirm on the preview.
+- Real Jarvis ingestion (no key on the public copy yet).

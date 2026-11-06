@@ -8,10 +8,10 @@
                                                               role from users/{uid}
                                         ┌──────────────────────────┼───────────────────────────┐
                                         ▼                          ▼                           ▼
-                                SaveState (savestate.co.za)   Jarvis (jarvis.savestate.co.za)  WeddingApp (Supabase REST)
-                                - login → custom token        - heartbeat (ping)               - read-only `media` rows
-                                - photo booklet + PIN album   - daily activity log (knowledge) - only visibility=public
-                                - profile images              - shared memories (knowledge)    - same-host URLs only
+                                SaveState (savestate.co.za)   Jarvis (jarvis.savestate.co.za)  WeddingApp (public media API)
+                                - login → custom token        - heartbeat (ping)               - read-only public media
+                                - photo booklet + PIN album   - daily activity log (knowledge) - public + unhidden only
+                                - profile images              - shared memories (knowledge)    - resized via its optimiser
                                 - mail relay /api/notify/send ◄─ Jarvis calls /api/jarvis/* with JARVIS_API_KEY
 ```
 
@@ -31,7 +31,7 @@
 |---|---|---|---|---|
 | Cupid | `createMemory`, `addMedia` | — | private memories are owner-only | uploaded to Cupid's PIN-locked SaveState album |
 | SaveState booklet | `previewSaveState`, `importRecords` | albums, photos (as the member) | album has a PIN | reference `{albumId, photoId, filename}` |
-| WeddingApp | `previewWedding`, `importRecords` | `media` table | `visibility != public`, or URL not on WeddingApp's own storage host | reference `{rowId}`, re-checked on every view |
+| WeddingApp | `previewWedding`, `importRecords` | `GET /api/media?visibility=public` | not public, or hidden | reference `{rowId}`, re-checked before serving |
 | Memory Book / Letters | `previewInternal` | Cupid collections | drafts (letters) | none |
 
 Common record (`src/lib/memoryGarden/model.ts`): `ownerId, visibility, title, caption, memoryDate, datePrecision, mediaType, media[], thumbnail, tags, collectionIds, favouritedBy, isSpecialOccasion, status, source, sourceRecordId, provenance, lastOpenedAt`.

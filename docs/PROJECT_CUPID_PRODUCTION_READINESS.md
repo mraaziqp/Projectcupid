@@ -1,31 +1,25 @@
 # Project Cupid 5.0 — Production Readiness
 
-**Status: ready for a preview deployment. Not approved for production.**
+**Status: live in production (https://projectcupid.vercel.app), deployed 2026-11-06.**
 
-## Gate
+## Done and verified live
 
-| Item | State |
-|---|---|
-| Typecheck, unit, rules (named DB), API integration, build | pass (see test report) |
-| Secrets in Git / bundle | none in the tree or the bundle; two dead keys remain in old history |
-| Private data in logs | ecosystem log is kind/side/counts only (tested); server logs print error messages, not bodies |
-| Firestore rules reviewed and emulator tested | yes; **not yet published** |
-| API endpoints reviewed | all behind member auth, a server key, or the cron secret, except `health`, `jarvis/health` (no tool list without a key) and SaveState login (rate-limited) |
-| New secrets in Vercel | 6 added to Production and Preview; unused until 5.0 is deployed |
-| Live credentials verified in the Vercel runtime | **no** — needs the preview |
+- Migration: `mraaziqp@gmail.com` → admin and `raziashade4@gmail.com` → sanctuary_owner (both were `reader`, which would have locked them out). Re-running changes nothing. 1 Memory Drop carried into the garden.
+- Data intact: 13 letters, 4 replies, 26 notifications, 7 weather entries, 1 drop, 5 cycle logs still owned by Razia.
+- Firestore rules and index published to the named database and `(default)`.
+- Production diagnostics pass except Gemini and Jarvis ingestion (below).
+- Old endpoints answer 404; unauthenticated notify 401; old public keys 401; SaveState login path reaches SaveState and refuses bad credentials.
 
-## Steps that need your approval, in order
+Rollback: `git show v4.1.4-prepared:firestore.rules > firestore.rules`, deploy; redeploy the previous Vercel deployment from the dashboard. Roles can stay as they are: 4.1 accepts them too.
 
-1. **Preview deploy** — `vercel deploy` (not `--prod`). Then sign in as admin on the preview, open Settings → Connections → *Run checks*. That tests the service account, FCM, Resend, Gemini, SaveState and Jarvis inside Vercel. Impact: none on production.
-2. **New Gemini key** (yours to create; see the credential report). Optional: a new Resend key.
-3. **Publish Firestore rules and the index to the named database**: `firebase deploy --only firestore --project studio-9165894196-8cf76`.
-   - Impact: the 4.1 production app keeps working for both of you; strangers and old `reader` profiles lose access (intended). The 4.1 client writes notifications without `senderId`, which the new rules refuse — those in-app notifications stop until 5.0 is live. **Publish the rules and deploy 5.0 together.**
-   - Rollback: `git show v4.1.4-prepared:firestore.rules > firestore.rules` and deploy.
-4. **Production deploy** of 5.0 (merge the feature branch to `main`, or `vercel deploy --prod`).
-5. **After deploy:** each of you signs in with Google once and links SaveState (Settings → SaveState), or you send me the account mapping for `CUPID_SAVESTATE_LINKS`. Start Jarvis from the Host Manager so Cupid can be registered (`JARVIS_ECOSYSTEM_KEY`).
+## Still open
 
-No data migration is needed. Existing collections are untouched, and the new ones start empty.
+1. **Domain `cupid.raziaraaziq.co.za`.** `raziaraaziq.co.za` is held outside this Vercel team, so the CLI gets 403 and a dashboard verification is needed. Then: GoDaddy DNS (`cname.vercel-dns.com` plus the `_vercel` TXT Vercel shows), Firebase Console → Authentication → Authorized domains (for Google sign-in), and `CUPID_PUBLIC_URL`.
+2. **Jarvis ingestion.** Needs the key from the public copy.
+3. **Gemini.** New key.
+4. **Linking.** Each member links SaveState once in Settings → SaveState.
+5. **Not yet exercised with a real signed-in account:** SaveState photo upload, mail through SaveState's relay, push to a device, and the signed-in screens on phone and desktop.
 
 ## Git
 
-Work is on branch `feature/cupid-5-memory-garden`, **uncommitted**, as you asked (nothing committed or pushed until it is tested and working end to end). `main`, `v4.1.4-prepared` and the history are untouched.
+`main` on GitHub still holds 4.1.4 until the feature branch is merged. Production was deployed from the CLI. Do not push old code to `main`: Vercel may redeploy it.

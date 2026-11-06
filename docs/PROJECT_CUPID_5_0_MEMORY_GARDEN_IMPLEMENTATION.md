@@ -1,6 +1,6 @@
 # Project Cupid 5.0 — The Memory Garden: Implementation
 
-Legend: **I** implemented · **U** unit tested · **E** emulator tested (rules and/or API) · **R** tested against the real external service · **P** awaiting your approval or credentials · **V** deployed and verified (nothing is yet)
+Legend: **I** implemented · **U** unit tested · **E** emulator tested (rules and/or API) · **R** tested against the real external service · **P** awaiting your approval or credentials · **V** deployed and verified (the server is live; signed-in screens are not yet verified)
 
 | Feature | Where | Status |
 |---|---|---|
@@ -14,7 +14,7 @@ Legend: **I** implemented · **U** unit tested · **E** emulator tested (rules a
 | Forgotten Treasures: older than a year or unopened for 90 days, stable per week | `model.ts#forgottenTreasures` | I · U |
 | Memory Theatre: large media, slideshow controls (no autoplay), date, caption, provenance, reactions and notes, favourite, edit (owner), add photo, collections, share with Jarvis, delete/remove | `garden/MemoryTheatre.tsx`, `MediaView.tsx` | I · E (server parts) |
 | Collections: user-created, shared or private; suggestions such as "Our Firsts" are only suggestions | `MemoryGarden.tsx`, rules `memory_collections` | I · E (rules) |
-| Imports with preview: SaveState booklet, WeddingApp, Memory Book, Letters | `garden/SourcesPanel.tsx`, `memories.ts` | I · E (fakes) · WeddingApp **P** (no live DB) |
+| Imports with preview: SaveState booklet, WeddingApp, Memory Book, Letters, timeline | `garden/SourcesPanel.tsx`, `memories.ts` | I · E · WeddingApp API checked live (R) |
 | Media storage in SaveState (PIN album, blank cover, served through Cupid only) | `memories.ts` | I · E (fake SaveState) · **P** real SaveState upload needs a deployed server |
 | Jarvis Memory Garden tools: find, get, on-date, suggest tags/collection, daily memory, propose change (approval) | `lib/server/jarvisTools.ts` | I · E |
 | Proposals approval UI | Settings → Connections | I |
