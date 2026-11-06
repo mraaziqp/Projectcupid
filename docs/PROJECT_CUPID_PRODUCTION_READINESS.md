@@ -1,6 +1,6 @@
 # Project Cupid 5.0 — Production Readiness
 
-**Status: live in production (https://projectcupid.vercel.app), deployed 2026-11-06.**
+**Status: live in production at https://cupid.raziaraaziq.co.za (also https://projectcupid.vercel.app), deployed 2026-11-06.**
 
 ## Done and verified live
 
@@ -12,13 +12,16 @@
 
 Rollback: `git show v4.1.4-prepared:firestore.rules > firestore.rules`, deploy; redeploy the previous Vercel deployment from the dashboard. Roles can stay as they are: 4.1 accepts them too.
 
+## Domain
+
+`cupid.raziaraaziq.co.za`: on the Vercel project through the projects API, with `_vercel` TXT and `cupid` CNAME in GoDaddy, verified, HTTPS working, listed in Firebase authorized domains, and `CUPID_PUBLIC_URL` set. The wedding site's DNS records were not changed.
+
 ## Still open
 
-1. **Domain `cupid.raziaraaziq.co.za`.** `raziaraaziq.co.za` is held outside this Vercel team, so the CLI gets 403 and a dashboard verification is needed. Then: GoDaddy DNS (`cname.vercel-dns.com` plus the `_vercel` TXT Vercel shows), Firebase Console → Authentication → Authorized domains (for Google sign-in), and `CUPID_PUBLIC_URL`.
-2. **Jarvis ingestion.** Needs the key from the public copy.
-3. **Gemini.** New key.
-4. **Linking.** Each member links SaveState once in Settings → SaveState.
-5. **Not yet exercised with a real signed-in account:** SaveState photo upload, mail through SaveState's relay, push to a device, and the signed-in screens on phone and desktop.
+1. **Jarvis ingestion.** Needs the key from the public copy, which runs on the Linux machine.
+2. **Gemini.** New key.
+3. **Linking.** Each member links SaveState once in Settings → SaveState.
+4. **Not yet exercised with a real signed-in account:** SaveState photo upload, mail through SaveState's relay, push to a device, and the signed-in screens on phone and desktop.
 
 ## Git
 
