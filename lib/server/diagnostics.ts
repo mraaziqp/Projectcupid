@@ -71,7 +71,15 @@ export async function runDiagnostics() {
     }
     const fromDomain = (env.resendFrom.match(/@([^>\s]+)/) ?? [])[1];
     const d = (b?.data ?? []).find((x: any) => x.name === fromDomain);
-    return { ok: d?.status === "verified" || d?.status === "partially_verified", detail: d ? `sender domain ${fromDomain}: ${d.status}` : `sender domain ${fromDomain} is not in this Resend account` };
+    if (!d) return { ok: false, detail: `sender domain ${fromDomain} is not in this Resend account` };
+    // What decides whether mail sends is DKIM and SPF. Other records (like the optional rsend CNAME) don't.
+    const full = await fetchWithTimeout(`${env.resendApi}/domains/${d.id}`, { headers: { Authorization: `Bearer ${env.resendKey}` }, timeoutMs: 8000 });
+    const records: any[] = ((await full.json().catch(() => ({}))) as any)?.records ?? [];
+    const needed = records.filter((x) => x.record === "DKIM" || (x.record === "SPF" && x.type !== "CNAME"));
+    const failing = needed.filter((x) => x.status !== "verified");
+    const optional = records.filter((x) => !needed.includes(x) && x.status !== "verified");
+    if (!needed.length || failing.length) return { ok: false, detail: `${fromDomain} can't send: ${failing.map((x) => `${x.record} ${x.type}`).join(", ") || "no DNS records found"}` };
+    return { ok: true, detail: `sending from ${fromDomain}${optional.length ? ` (optional record missing: ${optional.map((x) => x.name).join(", ")})` : ""}` };
   });
   checks.gemini = await safe(async () => {
     const out = await gemini("Reply with the single word: ready", "Answer in one word.", 15_000);

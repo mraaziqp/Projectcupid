@@ -139,7 +139,8 @@ export function fakeResend() {
   const state = { sent: [] as any[], works: true };
   const handler: Handler = (req, url, body) => {
     if (req.headers.authorization !== "Bearer re_test_key") return { status: 401, json: { name: "invalid_api_key" } };
-    if (url.pathname === "/domains") return { status: 200, json: { data: [{ name: "savestate.co.za", status: "partially_verified" }] } };
+    if (url.pathname === "/domains") return { status: 200, json: { data: [{ id: "d1", name: "savestate.co.za", status: "partially_failed" }] } };
+    if (url.pathname === "/domains/d1") return { status: 200, json: { records: [{ record: "DKIM", type: "TXT", name: "resend._domainkey", status: "verified" }, { record: "SPF", type: "MX", name: "send", status: "verified" }, { record: "SPF", type: "TXT", name: "send", status: "verified" }, { record: "SPF", type: "CNAME", name: "rsend", status: "failed" }] } };
     if (url.pathname === "/emails" && req.method === "POST") {
       if (!state.works) return { status: 500, json: { name: "internal_server_error" } };
       state.sent.push(JSON.parse(body.toString()));

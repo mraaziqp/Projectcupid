@@ -16,6 +16,14 @@ Rollback: `git show v4.1.4-prepared:firestore.rules > firestore.rules`, deploy; 
 
 `cupid.raziaraaziq.co.za`: on the Vercel project through the projects API, with `_vercel` TXT and `cupid` CNAME in GoDaddy, verified, HTTPS working, listed in Firebase authorized domains, and `CUPID_PUBLIC_URL` set. The wedding site's DNS records were not changed.
 
+## Accounts
+
+`mraaziqp@gmail.com` is the only admin. Everything owned by `backupe9@gmail.com` moved to it on 2026-11-06 (7 letters, 1 reply, 5 weather entries, 1 memory, 1 Memory Drop, 9 notifications; no conflicts, no record counts changed) and that account is retired: it can no longer open the app. Its Firebase login was not deleted.
+
+## Email
+
+The Command Centre's Connections & Email tab emails Razia directly through Resend as `Project Cupid <cupid@savestate.co.za>`, with replies to the sender; SaveState's relay is the fallback. Sends work with DKIM and SPF verified; the `rsend` CNAME is optional.
+
 ## Still open
 
 1. **Jarvis ingestion.** Needs the key from the public copy, which runs on the Linux machine.
