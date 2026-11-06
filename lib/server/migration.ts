@@ -62,7 +62,20 @@ export async function audit() {
       wellbeingOwners[owner][c] = (wellbeingOwners[owner][c] ?? 0) + 1;
     }
   }
-  return { people, counts, wellbeingOwners };
+  // Who letters say they are from: author fields and counts, never their text.
+  const letters = await db.collection("letters").get();
+  const known = new Map(people.map((p) => [p.uid, p.email ?? p.uid.slice(0, 6)]));
+  const letterAuthors: Record<string, number> = {};
+  const letterFields = new Set<string>();
+  let mentionsBoth = 0;
+  for (const d of letters.docs) {
+    Object.keys(d.data()).forEach((k) => letterFields.add(k));
+    const id = String(d.get("authorId") ?? "none");
+    const key = `authorId=${known.get(id) ?? id} authorName=${d.get("authorName") ?? "-"} author=${d.get("author") ?? "-"} from=${d.get("from") ?? "-"} category=${d.get("category") ?? "-"}`;
+    letterAuthors[key] = (letterAuthors[key] ?? 0) + 1;
+    if (/\b(both of us|from us|from both|the two of us)\b/i.test(String(d.get("content") ?? ""))) mentionsBoth++;
+  }
+  return { people, counts, wellbeingOwners, letters: { authors: letterAuthors, fields: [...letterFields].sort(), contentMentionsBoth: mentionsBoth } };
 }
 
 export async function fixRoles(dryRun: boolean) {

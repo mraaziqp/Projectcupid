@@ -8,6 +8,7 @@ import { db } from "../lib/firebase";
 import { cn } from "../lib/utils";
 import { useState, useEffect } from "react";
 import { notifyPartner } from "../lib/notifications";
+import { PERSON_NAME, personOf, useMembers } from "../lib/useMembers";
 
 interface Letter {
   id: string;
@@ -60,7 +61,13 @@ export default function LetterReader({
   }, [letter]);
   const date = letter.publishDate?.toDate ? letter.publishDate.toDate() : new Date();
   const isPersistedLetter = letter.id !== "preview" && !letter.id.startsWith("vault-");
-  const letterIsFromCurrentUser = Boolean(currentUserId && letter.authorId === currentUserId);
+  const members = useMembers();
+  const authorPerson = personOf(letter.authorId, members);
+  const authorName = authorPerson ? PERSON_NAME[authorPerson] : null;
+  // Raaziq has two accounts: a letter from either one is still his.
+  const letterIsFromCurrentUser = Boolean(
+    currentUserId && (letter.authorId === currentUserId || (authorPerson && authorPerson === personOf(currentUserId, members)))
+  );
   const salutationLine = letterIsFromCurrentUser ? "A note from your heart," : `To my dearest ${currentUserName || "Love"},`;
 
   useEffect(() => {
@@ -95,7 +102,7 @@ export default function LetterReader({
         letterId: letter.id,
         content: replyText.trim(),
         authorId: currentUserId,
-        authorName: currentUserName || "Razia",
+        authorName: currentUserName || "",
         createdAt: Timestamp.now(),
       });
 
@@ -360,17 +367,17 @@ export default function LetterReader({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 + paragraphs.length * 0.4 + 0.5 }}
-              className="mt-20 pt-12 border-t border-white/5 flex items-center justify-between"
+              className="mt-12 md:mt-20 pt-8 md:pt-12 border-t border-white/5 flex flex-wrap items-center justify-between gap-4"
             >
                <div className="space-y-1 text-white/40">
                   <p className="font-serif italic text-xl text-pink-500/70">Always yours,</p>
-                  <p className="text-sm font-medium tracking-widest uppercase">Your Tinkerer</p>
+                  {authorName && <p className="text-sm font-medium tracking-widest uppercase">{authorName}</p>}
                </div>
                <button 
                  onClick={toggleFavorite}
                  className="px-6 py-3 bg-white text-black text-xs font-bold uppercase tracking-widest rounded-full hover:bg-pink-100 transition-all shadow-xl"
                >
-                 {isFavorite ? "In Forever Book" : "Save to Forever Book"}
+                 {isFavorite ? "Favourited" : "Add to favourites"}
                </button>
             </motion.div>
 
@@ -405,7 +412,7 @@ export default function LetterReader({
                         >
                           <div className="flex items-center justify-between gap-4 mb-2">
                             <span className="text-[10px] uppercase tracking-widest text-white/40 font-bold">
-                              {reply.authorName || "Razia"}
+                              {(() => { const who = personOf(reply.authorId, members); return who ? PERSON_NAME[who] : reply.authorName || "Your love"; })()}
                             </span>
                             <div className="flex items-center gap-2 text-[10px] text-white/30">
                               <span>{replyDate ? format(replyDate, "MMM d, h:mm a") : "Just now"}</span>

@@ -48,6 +48,7 @@ import {
 } from "firebase/firestore";
 import LetterReader from "./LetterReader";
 import AdminEditor from "./AdminEditor";
+import { PERSON_NAME, personOf, useMembers } from "../lib/useMembers";
 import { format } from "date-fns";
 
 interface OurLoveProps {
@@ -142,6 +143,7 @@ export default function OurLove({
 
   // Reader / Editor modals
   const [readingLetter, setReadingLetter] = useState<any | null>(null);
+  const members = useMembers();
   const [showWriteModal, setShowWriteModal] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
 
@@ -438,7 +440,7 @@ export default function OurLove({
                     </div>
 
                     <div className="pt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-white/40">
-                      <span>Tap to read letter & envelope</span>
+                      <span>{(() => { const who = personOf(l.authorId, members); return who ? `From ${PERSON_NAME[who]}` : "Tap to read"; })()}</span>
                       <BookHeart className="w-4 h-4 text-rose-400 opacity-60 group-hover:opacity-100 transition-opacity" />
                     </div>
                   </GlassPanel>
