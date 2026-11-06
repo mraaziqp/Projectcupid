@@ -56,6 +56,14 @@ function need(): App {
   return a;
 }
 
+/** An OAuth token for the service account, for Google APIs the Admin SDK doesn't wrap. */
+export async function adminAccessToken(): Promise<string> {
+  const a = need();
+  const cred = a.options.credential;
+  if (!cred) throw new AdminUnavailableError();
+  return (await cred.getAccessToken()).access_token;
+}
+
 export const adminStatus = () => ({ ready: !!init(), error: initError });
 export const adminAuth = (): Auth => getAuth(need());
 /** The app's named database. Never the (default) one. */

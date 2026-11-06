@@ -8,8 +8,8 @@
  */
 import { Readable } from "node:stream";
 import { FieldValue } from "firebase-admin/firestore";
-import { adminDb } from "./firebaseAdmin.js";
-import { APP_VERSION, env } from "./config.js";
+import { adminAccessToken, adminDb } from "./firebaseAdmin.js";
+import { APP_VERSION, env, FIREBASE_PROJECT_ID } from "./config.js";
 import { bearer, header, HttpError, jsonBody, onlyKeys, queryParam, sendJson, text, type ApiRequest, type ApiResponse } from "./http.js";
 import { requireAdmin, requireKey, requireMember, sideOf, type Member } from "./authz.js";
 import { secretEquals } from "./crypto.js";
@@ -285,6 +285,22 @@ on("POST", "admin/migrate", async ({ req, body }) => {
     roles: steps.includes("roles") ? await fixRoles(dryRun) : undefined,
     garden: steps.includes("garden") ? await carryOver(dryRun) : undefined,
   };
+});
+// Adds this deployment's public hostname to Firebase Auth's authorized domains (Google sign-in needs it).
+on("POST", "admin/authorize-domain", async ({ req }) => {
+  await cronOrAdmin(req);
+  const host = new URL(env.publicUrl).host;
+  const url = `https://identitytoolkit.googleapis.com/admin/v2/projects/${FIREBASE_PROJECT_ID}/config`;
+  const headers = { Authorization: `Bearer ${await adminAccessToken()}`, "Content-Type": "application/json" };
+  const cur = await fetch(url, { headers });
+  const cfg: any = await cur.json().catch(() => ({}));
+  if (!cur.ok) throw new HttpError(502, `Firebase config answered ${cur.status}.`, "firebase_config");
+  const domains: string[] = cfg.authorizedDomains ?? [];
+  if (domains.includes(host)) return { host, added: false, domains };
+  const next = [...domains, host];
+  const up = await fetch(`${url}?updateMask=authorizedDomains`, { method: "PATCH", headers, body: JSON.stringify({ authorizedDomains: next }) });
+  if (!up.ok) throw new HttpError(502, `Firebase refused the change (${up.status}).`, "firebase_config");
+  return { host, added: true, domains: next };
 });
 on("GET", "cron/daily", async ({ req }) => {
   await cronOrAdmin(req);
